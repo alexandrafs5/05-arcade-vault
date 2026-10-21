@@ -13,6 +13,10 @@ Arcade Vault: online games platform where players compete for the highest score 
 - `npm run lint` — ESLint (flat config, `eslint-config-next` core-web-vitals + typescript)
 - No test runner configured.
 
+## Skills
+
+Always use /frontend-design to design user interface.
+
 ## Stack / gotchas
 
 - Next.js 16.4.2, React 19.3, Tailwind v4 (via `@tailwindcss/turbopack` loader rule in `next.config.ts`), TypeScript. App Router only (`app/`); path alias `@/*` → repo root.
