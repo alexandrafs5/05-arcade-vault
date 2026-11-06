@@ -14,7 +14,7 @@
 - Library moves from `/` to `/biblioteca` (same component, no behavior change).
 - Nav (desktop + mobile panel) gets four links: Inicio (`/`), Biblioteca (`/biblioteca`), Salón de la Fama (`/salon`), Acerca de (`/acerca`).
 - `/acerca` page: arcade-styled "PRÓXIMAMENTE" placeholder. No About content from `about.jsx`.
-- Home CSS ported from `references/templates/home-about/styles.css` lines 930–1069 (`/* ===== HOME PAGE ===== */` through `.reveal.in`) into `app/globals.css`.
+- Home CSS ported from `references/templates/home-about/styles.css` lines 930–1069 (`/* ===== HOME PAGE ===== */` through `.reveal.in`) and lines 1621–1725 (`/* ===== ACTIVITY ===== */` and `/* ===== PRICING ===== */`) into `app/globals.css`. The Gamepad and Theme variants blocks are not used by Home and stay out.
 - Links updated for the new library route (see plan step 7).
 - Static mock data for activity, top players, stats, features and FAQ in `lib/data.ts`.
 - UI copy stays in Spanish, as in the template.
@@ -57,7 +57,7 @@ Conventions:
 
 ## Implementation plan
 
-1. Port the Home CSS block (template lines 930–1069) into `app/globals.css`, after the existing styles. Manual check: `npm run dev` still renders all current pages unchanged.
+1. Port the Home CSS blocks (template lines 930–1069 and 1621–1725) into `app/globals.css`, after the existing styles. Manual check: `npm run dev` still renders all current pages unchanged.
 2. Add the new types and constants to `lib/data.ts`. Manual check: `npm run lint` passes.
 3. Move the library: create `app/biblioteca/page.tsx` rendering `<Library />`. Manual check: `/biblioteca` shows the 8-card library.
 4. Create `components/silhouettes.tsx` (8 decorative SVGs, server component) and `components/feature-icon.tsx` (4 pixel icons). Manual check: both compile and render when imported temporarily.
