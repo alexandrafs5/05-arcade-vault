@@ -1,31 +1,70 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { ContactForm } from "@/components/contact-form";
+import { HighlightIcon, type HighlightKind } from "@/components/highlight-icon";
+import { Reveal } from "@/components/reveal";
 
 export const metadata: Metadata = { title: "Acerca de · Arcade Vault" };
 
+const HIGHLIGHTS: { i: HighlightKind; t: string; c: string }[] = [
+  { i: "HEART", t: "HECHO CON ❤️ PARA JUGADORES", c: "magenta" },
+  { i: "BROWSER", t: "JUEGOS EN HTML — CORREN EN CUALQUIER NAVEGADOR", c: "cyan" },
+  { i: "PLANT", t: "PROYECTO EN CONSTANTE CRECIMIENTO", c: "green" },
+];
+
 export default function AcercaPage() {
   return (
-    <div
-      className="fade-in"
-      style={{
-        minHeight: "calc(100vh - 160px)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 24,
-        padding: "80px 32px",
-        textAlign: "center",
-      }}
-    >
-      <div className="pixel neon-magenta" style={{ fontSize: 11, letterSpacing: "0.22em" }}>ACERCA DE</div>
-      <h1 className="pixel neon-cyan flicker" style={{ margin: 0, fontSize: "clamp(24px, 5vw, 56px)", letterSpacing: "0.08em" }}>
-        PRÓXIMAMENTE<span style={{ animation: "blink 1.2s steps(1, end) infinite" }}>_</span>
-      </h1>
-      <p style={{ margin: 0, maxWidth: 480, color: "var(--ink-dim)", lineHeight: 1.7 }}>
-        Esta sección todavía está cargando. Vuelve pronto.
-      </p>
-      <Link href="/" className="btn lg">VOLVER AL INICIO</Link>
+    <div className="about fade-in">
+      {/* ABOUT */}
+      <section className="about-hero">
+        <div className="kicker pixel neon-yellow">▸ ACERCA DE</div>
+        <h1 className="about-title">ACERCA DE ARCADE VAULT</h1>
+        <p className="about-mission">
+          ARCADE VAULT nació del amor por los videojuegos clásicos. Nuestra misión es preservar y celebrar
+          los arcades que definieron una generación, haciéndolos accesibles para todos, en cualquier lugar
+          y sin costo.
+        </p>
+
+        <div className="highlight-row">
+          {HIGHLIGHTS.map((h, i) => (
+            <div key={h.i} className={"highlight " + h.c} style={{ transitionDelay: i * 80 + "ms" }}>
+              <HighlightIcon kind={h.i} />
+              <div className="hl-text pixel">{h.t}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* divider banner */}
+      <Reveal className="about-divider">
+        <div className="div-bar"></div>
+        <div className="div-pixels">
+          {Array.from({ length: 24 }).map((_, i) => (
+            <span key={i} style={{ animationDelay: i * 80 + "ms" }}></span>
+          ))}
+        </div>
+        <div className="div-bar"></div>
+      </Reveal>
+
+      {/* CONTACT */}
+      <Reveal as="section" className="about-contact">
+        <div className="contact-grid">
+          <div className="contact-intro">
+            <div className="kicker pixel neon-cyan">▸ CONTACTO</div>
+            <h2 className="contact-title">CONTÁCTANOS</h2>
+            <p className="contact-sub">
+              ¿Tienes alguna sugerencia, quieres proponer un juego, o simplemente quieres saludar?
+              Escríbenos.
+            </p>
+            <div className="contact-tips">
+              <div className="tip"><span className="tip-led"></span>RESPUESTA EN 24-48H</div>
+              <div className="tip"><span className="tip-led y"></span>SUGERENCIAS BIENVENIDAS</div>
+              <div className="tip"><span className="tip-led m"></span>SIN SPAM, JAMÁS</div>
+            </div>
+          </div>
+
+          <ContactForm />
+        </div>
+      </Reveal>
     </div>
   );
 }
