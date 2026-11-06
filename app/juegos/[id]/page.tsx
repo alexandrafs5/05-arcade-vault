@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { GAMES, getGame, seededScores } from "@/lib/data";
@@ -6,7 +7,7 @@ export function generateStaticParams() {
   return GAMES.map((g) => ({ id: g.id }));
 }
 
-export default async function GameDetailPage({ params }: PageProps<"/juegos/[id]">) {
+async function GameDetail({ params }: { params: PageProps<"/juegos/[id]">["params"] }) {
   const { id } = await params;
   const game = getGame(id);
   if (!game) notFound();
@@ -50,7 +51,7 @@ export default async function GameDetailPage({ params }: PageProps<"/juegos/[id]
             <Link href={`/juegos/${game.id}/jugar`} className="btn xl pulse">
               ▶&nbsp; JUGAR AHORA
             </Link>
-            <Link href="/" className="btn ghost lg">
+            <Link href="/biblioteca" className="btn ghost lg">
               VOLVER AL VAULT
             </Link>
           </div>
@@ -73,5 +74,13 @@ export default async function GameDetailPage({ params }: PageProps<"/juegos/[id]
         </div>
       </aside>
     </div>
+  );
+}
+
+export default function GameDetailPage({ params }: PageProps<"/juegos/[id]">) {
+  return (
+    <Suspense fallback={<div className="pixel neon-cyan" style={{ padding: "80px 32px", textAlign: "center" }}>CARGANDO_</div>}>
+      <GameDetail params={params} />
+    </Suspense>
   );
 }
