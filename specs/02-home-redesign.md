@@ -1,6 +1,6 @@
 # SPEC 02 — Home landing page and nav redesign
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 01
 > **Date:** 2026-11-05
 > **Objective:** Add the new Home landing page at `/`, move the library to `/biblioteca`, update the nav to Inicio / Biblioteca / Salón de la Fama / Acerca de, and ship `/acerca` as a "PRÓXIMAMENTE" placeholder, following `references/templates/home-about/` (minus the About content).
@@ -75,23 +75,23 @@ Conventions:
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` and `npm run build` finish with no errors.
-- [ ] `/`, `/biblioteca`, `/acerca`, `/salon`, `/acceso`, `/juegos/caida`, `/juegos/caida/jugar` render without console errors.
-- [ ] `/` shows, in order: hero, "¿POR QUÉ ARCADE VAULT?" (4 cards), "JUEGOS DISPONIBLES AHORA" (6 mini cards), stats strip (3 blocks), "ACTIVIDAD EN VIVO" (7 ticker rows, 5 top rows), "PRECIOS" (1 price card, 3 FAQ items), final CTA.
-- [ ] Hero title reads "EL ARCADE / CLÁSICO ESTÁ / DE VUELTA" on three lines and shows 8 floating silhouettes.
-- [ ] "EXPLORAR JUEGOS", "VER TODOS LOS JUEGOS →" and "INSERTAR MONEDA →" go to `/biblioteca`.
-- [ ] "CREAR CUENTA" and "EMPEZAR GRATIS →" go to `/acceso`, with or without a session.
-- [ ] "VER SALÓN →" goes to `/salon`.
-- [ ] Clicking a mini card goes to `/juegos/[id]` for that game.
-- [ ] Sections with `.reveal` start hidden and gain `.in` when scrolled into view.
-- [ ] `/biblioteca` behaves like the old `/`: 8 cards, search "caí" leaves CAÍDA, chip PUZZLE leaves CAÍDA, no match shows "NO HAY RESULTADOS".
-- [ ] `/acerca` shows "PRÓXIMAMENTE" and no other About content.
-- [ ] Desktop nav shows Inicio, Biblioteca, Salón de la Fama, Acerca de, in that order; the mobile panel shows the same four plus the auth link.
-- [ ] Active nav link: Inicio only on `/`; Biblioteca on `/biblioteca` and `/juegos/*`; Salón de la Fama on `/salon`; Acerca de on `/acerca`.
-- [ ] "VOLVER AL VAULT" (detail and player) and "VOLVER A LA BIBLIOTECA" (hall of fame) go to `/biblioteca`.
-- [ ] Submitting `/acceso` with "px_kai" redirects to `/` (Home) and the nav shows `PX_KAI`.
-- [ ] At width ≤ 980px feature cards use 2 columns; at ≤ 520px, 1 column; mini-rail uses 3 columns at ≤ 1100px and 2 at ≤ 600px.
-- [ ] With `localStorage` blocked, `/` still renders.
+- [x] `npm run lint` and `npm run build` finish with no errors.
+- [x] `/`, `/biblioteca`, `/acerca`, `/salon`, `/acceso`, `/juegos/caida`, `/juegos/caida/jugar` render without console errors.
+- [x] `/` shows, in order: hero, "¿POR QUÉ ARCADE VAULT?" (4 cards), "JUEGOS DISPONIBLES AHORA" (6 mini cards), stats strip (3 blocks), "ACTIVIDAD EN VIVO" (7 ticker rows, 5 top rows), "PRECIOS" (1 price card, 3 FAQ items), final CTA.
+- [x] Hero title reads "EL ARCADE / CLÁSICO ESTÁ / DE VUELTA" on three lines and shows 8 floating silhouettes.
+- [x] "EXPLORAR JUEGOS", "VER TODOS LOS JUEGOS →" and "INSERTAR MONEDA →" go to `/biblioteca`.
+- [x] "CREAR CUENTA" and "EMPEZAR GRATIS →" go to `/acceso`, with or without a session.
+- [x] "VER SALÓN →" goes to `/salon`.
+- [x] Clicking a mini card goes to `/juegos/[id]` for that game.
+- [x] Sections with `.reveal` start hidden and gain `.in` when scrolled into view.
+- [x] `/biblioteca` behaves like the old `/`: 8 cards, search "caí" leaves CAÍDA, chip PUZZLE leaves CAÍDA, no match shows "NO HAY RESULTADOS".
+- [x] `/acerca` shows "PRÓXIMAMENTE" and no other About content.
+- [x] Desktop nav shows Inicio, Biblioteca, Salón de la Fama, Acerca de, in that order; the mobile panel shows the same four plus the auth link.
+- [x] Active nav link: Inicio only on `/`; Biblioteca on `/biblioteca` and `/juegos/*`; Salón de la Fama on `/salon`; Acerca de on `/acerca`.
+- [x] "VOLVER AL VAULT" (detail and player) and "VOLVER A LA BIBLIOTECA" (hall of fame) go to `/biblioteca`.
+- [x] Submitting `/acceso` with "px_kai" redirects to `/` (Home) and the nav shows `PX_KAI`.
+- [x] At width ≤ 980px feature cards use 2 columns; at ≤ 520px, 1 column; mini-rail uses 3 columns at ≤ 1100px and 2 at ≤ 600px.
+- [x] With `localStorage` blocked, `/` still renders.
 
 ## Decisions
 
