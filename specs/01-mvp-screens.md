@@ -1,6 +1,6 @@
 # SPEC 01 — MVP screens (visual only)
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** none (styles already ported to `app/globals.css` in PR #1 `01-styles`)
 > **Date:** 2026-10-27
 > **Objective:** Implement the five Arcade Vault screens from `references/templates` (library, game detail, game player, auth, hall of fame) as Next.js App Router routes with mock data and no real game logic.
@@ -79,24 +79,24 @@ Conventions:
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` and `npm run build` finish with no errors.
-- [ ] `/`, `/salon`, `/acceso`, `/juegos/caida`, `/juegos/caida/jugar` all render without console errors.
-- [ ] `/juegos/no-existe` and `/juegos/no-existe/jugar` return the 404 page.
-- [ ] Library shows 8 game cards; typing "caí" leaves only CAÍDA; chip PUZZLE leaves only CAÍDA; a query with no match shows "NO HAY RESULTADOS".
-- [ ] Clicking a card or its JUGAR button navigates to `/juegos/[id]`.
-- [ ] Detail shows title, 4 tags, plays, global best, and exactly 10 leaderboard rows sorted by score descending.
-- [ ] "JUGAR AHORA" goes to `/juegos/[id]/jugar`; "VOLVER AL VAULT" goes to `/`.
-- [ ] Hall of fame shows 8 game tabs, 3 podium slots, 12 table rows; selecting another tab changes rows deterministically (same tab → same rows on reload).
-- [ ] Logged-out hall of fame has no "TU MEJOR MARCA" row; logged-in has it with the user's name.
-- [ ] Submitting `/acceso` with username "px_kai" redirects to `/` and the nav button shows `PX_KAI`; reloading keeps it.
-- [ ] Clicking the user button signs out and the nav shows "Iniciar Sesión" again.
-- [ ] "JUGAR COMO INVITADO" redirects to `/` with no user stored.
-- [ ] Player score increases while running, stops on PAUSA (overlay "EN PAUSA"), resumes on REANUDAR.
-- [ ] FIN opens the modal with the final score; GUARDAR PUNTUACIÓN appends one entry to `localStorage.av_scores` and shows "PUNTUACIÓN GUARDADA_"; JUGAR DE NUEVO resets score to 0.
-- [ ] SALIR in the player goes to `/juegos/[id]`.
-- [ ] At viewport width ≤ 768px the hamburger shows the side panel with Biblioteca, Salón de la Fama, and the auth link; backdrop click closes it.
-- [ ] Active nav link is highlighted on `/`, `/juegos/*` (Biblioteca) and `/salon`.
-- [ ] With `localStorage` blocked, all pages still render (no crash).
+- [x] `npm run lint` and `npm run build` finish with no errors.
+- [x] `/`, `/salon`, `/acceso`, `/juegos/caida`, `/juegos/caida/jugar` all render without console errors.
+- [x] `/juegos/no-existe` and `/juegos/no-existe/jugar` return the 404 page.
+- [x] Library shows 8 game cards; typing "caí" leaves only CAÍDA; chip PUZZLE leaves only CAÍDA; a query with no match shows "NO HAY RESULTADOS".
+- [x] Clicking a card or its JUGAR button navigates to `/juegos/[id]`.
+- [x] Detail shows title, 4 tags, plays, global best, and exactly 10 leaderboard rows sorted by score descending.
+- [x] "JUGAR AHORA" goes to `/juegos/[id]/jugar`; "VOLVER AL VAULT" goes to `/`.
+- [x] Hall of fame shows 8 game tabs, 3 podium slots, 12 table rows; selecting another tab changes rows deterministically (same tab → same rows on reload).
+- [x] Logged-out hall of fame has no "TU MEJOR MARCA" row; logged-in has it with the user's name.
+- [x] Submitting `/acceso` with username "px_kai" redirects to `/` and the nav button shows `PX_KAI`; reloading keeps it.
+- [x] Clicking the user button signs out and the nav shows "Iniciar Sesión" again.
+- [x] "JUGAR COMO INVITADO" redirects to `/` with no user stored.
+- [x] Player score increases while running, stops on PAUSA (overlay "EN PAUSA"), resumes on REANUDAR.
+- [x] FIN opens the modal with the final score; GUARDAR PUNTUACIÓN appends one entry to `localStorage.av_scores` and shows "PUNTUACIÓN GUARDADA_"; JUGAR DE NUEVO resets score to 0.
+- [x] SALIR in the player goes to `/juegos/[id]`.
+- [x] At viewport width ≤ 768px the hamburger shows the side panel with Biblioteca, Salón de la Fama, and the auth link; backdrop click closes it.
+- [x] Active nav link is highlighted on `/`, `/juegos/*` (Biblioteca) and `/salon`.
+- [x] With `localStorage` blocked, all pages still render (no crash).
 
 ## Decisions
 
