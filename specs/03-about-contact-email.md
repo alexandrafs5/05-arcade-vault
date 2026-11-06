@@ -1,6 +1,6 @@
 # SPEC 03 — About page and contact email (Resend)
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 01, SPEC 02
 > **Date:** 2026-11-05
 > **Objective:** Replace the `/acerca` placeholder with the About page from `references/templates/home-about/about.jsx` and make its contact form send a real email to the team through Resend using a Server Action.
@@ -70,21 +70,21 @@ Conventions:
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` and `npm run build` finish with no errors.
-- [ ] `/acerca` renders without console errors and no longer shows "PRÓXIMAMENTE".
-- [ ] `/acerca` shows, in order: hero ("ACERCA DE ARCADE VAULT" + mission text), 3 highlight cards, divider with 24 pixels, contact section with title "CONTÁCTANOS", 3 tips, and the form.
-- [ ] Texts, class names, and styles match `references/templates/home-about/about.jsx` and `styles.css`; no copy is invented beyond the error state.
-- [ ] Submitting with any empty field shakes the form and sends nothing.
-- [ ] Submitting valid data with a valid `RESEND_API_KEY` delivers an email to `CONTACT_TO_EMAIL` with subject `[Arcade Vault] Mensaje de <name>`.
-- [ ] Replying to that email targets the sender's address (`Reply-To`).
-- [ ] After a successful send the terminal box shows `MENSAJE RECIBIDO. TE RESPONDEREMOS PRONTO. GRACIAS, <NAME>.` and `ENVIAR OTRO MENSAJE` resets the form to empty.
-- [ ] With a missing or invalid `RESEND_API_KEY`, the terminal box shows an `[ERROR]` line and `REINTENTAR` returns to the form with the typed data intact.
-- [ ] A submission with the honeypot field filled shows success and no email arrives.
-- [ ] A message longer than 2000 characters or an invalid email format is rejected by the Server Action even if the client check is bypassed.
-- [ ] `RESEND_API_KEY` does not appear in any client bundle or in the committed files.
-- [ ] `.env.local` is ignored by git and `.env.example` is tracked.
-- [ ] The divider and contact section start hidden and gain `.in` on scroll.
-- [ ] At width ≤ 820px highlights stack in 1 column; at ≤ 900px the contact grid stacks in 1 column.
+- [x] `npm run lint` and `npm run build` finish with no errors.
+- [x] `/acerca` renders without console errors and no longer shows "PRÓXIMAMENTE".
+- [x] `/acerca` shows, in order: hero ("ACERCA DE ARCADE VAULT" + mission text), 3 highlight cards, divider with 24 pixels, contact section with title "CONTÁCTANOS", 3 tips, and the form.
+- [x] Texts, class names, and styles match `references/templates/home-about/about.jsx` and `styles.css`; no copy is invented beyond the error state.
+- [x] Submitting with any empty field shakes the form and sends nothing.
+- [x] Submitting valid data with a valid `RESEND_API_KEY` delivers an email to `CONTACT_TO_EMAIL` with subject `[Arcade Vault] Mensaje de <name>`.
+- [x] Replying to that email targets the sender's address (`Reply-To`).
+- [x] After a successful send the terminal box shows `MENSAJE RECIBIDO. TE RESPONDEREMOS PRONTO. GRACIAS, <NAME>.` and `ENVIAR OTRO MENSAJE` resets the form to empty.
+- [x] With a missing or invalid `RESEND_API_KEY`, the terminal box shows an `[ERROR]` line and `REINTENTAR` returns to the form with the typed data intact.
+- [x] A submission with the honeypot field filled shows success and no email arrives.
+- [x] A message longer than 2000 characters or an invalid email format is rejected by the Server Action even if the client check is bypassed.
+- [x] `RESEND_API_KEY` does not appear in any client bundle or in the committed files.
+- [x] `.env.local` is ignored by git and `.env.example` is tracked.
+- [x] The divider and contact section start hidden and gain `.in` on scroll.
+- [x] At width ≤ 820px highlights stack in 1 column; at ≤ 900px the contact grid stacks in 1 column.
 
 ## Decisions
 
