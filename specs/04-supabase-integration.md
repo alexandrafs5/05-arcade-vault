@@ -1,6 +1,6 @@
 # SPEC 04 — Supabase integration (setup only)
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 01
 > **Date:** 2026-11-09
 > **Objective:** Connect the Next.js app to the existing Supabase project with the JS client (browser and server), environment variables, and a connectivity check, with no functional change to auth or data.
@@ -59,17 +59,17 @@ Conventions:
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` and `npm run build` finish with no errors.
-- [ ] `package.json` lists `@supabase/supabase-js` and `@supabase/ssr`.
-- [ ] `lib/supabase/client.ts` and `lib/supabase/server.ts` exist and each exports `createClient`.
-- [ ] `.env.example` lists `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` with no values and is tracked by git.
-- [ ] `.env.local` is ignored by git and no Supabase key or URL value appears in committed files.
-- [ ] The server client calls `auth.getSession()` against the project and returns no error (session is `null`).
-- [ ] The browser client reaches the project from a client component with no error in the console.
-- [ ] No secret or service-role key appears in the client bundle or in the repo.
-- [ ] `/acceso` login, guest flow, nav user button, and `av_user` / `av_scores` behave exactly as in SPEC 01.
-- [ ] All existing routes (`/`, `/salon`, `/acceso`, `/acerca`, `/juegos/caida`, `/juegos/caida/jugar`) render without console errors.
-- [ ] The app still builds and runs if the two env vars are missing from a page that does not use Supabase (no import-time crash).
+- [x] `npm run lint` and `npm run build` finish with no errors.
+- [x] `package.json` lists `@supabase/supabase-js` and `@supabase/ssr`.
+- [x] `lib/supabase/client.ts` and `lib/supabase/server.ts` exist and each exports `createClient`.
+- [x] `.env.example` lists `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` with no values and is tracked by git.
+- [x] `.env.local` is ignored by git and no Supabase key or URL value appears in committed files.
+- [x] The server client calls `auth.getSession()` against the project and returns no error (session is `null`).
+- [x] The browser client reaches the project from a client component with no error in the console.
+- [x] No secret or service-role key appears in the client bundle or in the repo.
+- [x] `/acceso` login, guest flow, nav user button, and `av_user` / `av_scores` behave exactly as in SPEC 01.
+- [x] All existing routes (`/`, `/salon`, `/acceso`, `/acerca`, `/juegos/caida`, `/juegos/caida/jugar`) render without console errors.
+- [x] The app still builds and runs if the two env vars are missing from a page that does not use Supabase (no import-time crash).
 
 ## Decisions
 
