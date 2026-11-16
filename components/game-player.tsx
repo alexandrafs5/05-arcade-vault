@@ -7,7 +7,6 @@ import type { EngineSnapshot } from "@/lib/games/asteroids/engine";
 import { useSession } from "@/lib/session";
 
 const LIVES = 3;
-const POINTS_PER_LEVEL = 2500;
 
 export function GamePlayer({
   gameId,
@@ -23,23 +22,20 @@ export function GamePlayer({
   const [over, setOver] = useState(false);
   const [typedName, setTypedName] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
   const [lives, setLives] = useState(LIVES);
-  const [engineLevel, setEngineLevel] = useState(1);
+  const [level, setLevel] = useState(1);
   const [restartKey, setRestartKey] = useState(0);
-
-  // Games with a real engine report score, lives and level; the rest use the mock arena.
-  const isRocas = gameId === "rocas";
 
   // The session loads after mount, so the name follows it until the player edits it.
   const name = typedName ?? user?.name ?? "INVITADO";
-  const level = isRocas
-    ? engineLevel
-    : 1 + Math.floor(score / POINTS_PER_LEVEL);
+  const cleanName = name.trim();
 
   const handleEngineChange = (s: EngineSnapshot) => {
     setScore(s.score);
     setLives(s.lives);
-    setEngineLevel(s.level);
+    setLevel(s.level);
   };
 
   const handleEngineGameOver = (finalScore: number) => {
@@ -47,18 +43,22 @@ export function GamePlayer({
     setOver(true);
   };
 
-  useEffect(() => {
-    if (isRocas || over || paused) return;
-    const t = setInterval(
-      () => setScore((s) => s + Math.floor(10 + Math.random() * 90)),
-      220,
-    );
-    return () => clearInterval(t);
-  }, [isRocas, over, paused]);
+  const save = async () => {
+    setSaving(true);
+    setSaveError(false);
+    try {
+      await saveScore({ game: gameId, score, name: cleanName });
+      setSaved(true);
+    } catch {
+      setSaveError(true);
+    } finally {
+      setSaving(false);
+    }
+  };
 
-  // P / Esc toggle pause for the real game (ignored while the modal or a text field has focus).
+  // P / Esc toggle pause (ignored while the modal or a text field has focus).
   useEffect(() => {
-    if (!isRocas || over) return;
+    if (over) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.code !== "KeyP" && e.code !== "Escape") return;
       const t = e.target as HTMLElement | null;
@@ -68,16 +68,17 @@ export function GamePlayer({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [isRocas, over]);
+  }, [over]);
 
   const restart = () => {
     setScore(0);
     setLives(LIVES);
-    setEngineLevel(1);
+    setLevel(1);
     setRestartKey((k) => k + 1);
     setPaused(false);
     setOver(false);
     setSaved(false);
+    setSaveError(false);
   };
 
   return (
@@ -123,22 +124,12 @@ export function GamePlayer({
 
       <div className="crt">
         <div className="crt-screen">
-          {isRocas ? (
-            <AsteroidsCanvas
-              paused={paused || over}
-              restartKey={restartKey}
-              onChange={handleEngineChange}
-              onGameOver={handleEngineGameOver}
-            />
-          ) : (
-            <div className="game-arena">
-              <div className="grid-floor"></div>
-              <div className="enemy e1"></div>
-              <div className="enemy e2"></div>
-              <div className="enemy e3"></div>
-              <div className="player-ship"></div>
-            </div>
-          )}
+          <AsteroidsCanvas
+            paused={paused || over}
+            restartKey={restartKey}
+            onChange={handleEngineChange}
+            onGameOver={handleEngineGameOver}
+          />
           {paused && (
             <div
               className="crt-content"
@@ -187,16 +178,28 @@ export function GamePlayer({
                 />
                 <button
                   className="btn yellow"
-                  onClick={() => {
-                    saveScore({ game: gameId, score, name });
-                    setSaved(true);
-                  }}
+                  disabled={saving || cleanName.length === 0}
+                  onClick={save}
                 >
-                  GUARDAR PUNTUACIÓN
+                  {saving ? "GUARDANDO…" : "GUARDAR PUNTUACIÓN"}
                 </button>
               </div>
             ) : (
               <div className="toast-saved">▸ PUNTUACIÓN GUARDADA_</div>
+            )}
+            {saveError && !saved && (
+              <div
+                role="alert"
+                className="mono"
+                style={{
+                  color: "var(--magenta)",
+                  fontSize: 12,
+                  letterSpacing: "0.1em",
+                  marginTop: 10,
+                }}
+              >
+                ✖ NO SE PUDO GUARDAR. REVISA TU CONEXIÓN Y REINTENTA.
+              </div>
             )}
             <div className="actions">
               <button className="btn" onClick={restart}>
