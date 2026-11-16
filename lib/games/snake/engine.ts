@@ -1,5 +1,13 @@
 import type { CreateEngine, EngineSnapshot, EngineState } from "../types";
 import {
+  APPLE_SPRITE,
+  CELL,
+  COLOR_APPLE_FALLBACK,
+  COLOR_BOARD_A,
+  COLOR_BOARD_B,
+  COLOR_EYE_PUPIL,
+  COLOR_EYE_WHITE,
+  COLOR_SNAKE,
   COLS,
   DIRS,
   FIRST_APPLE,
@@ -10,6 +18,7 @@ import {
   ROWS,
   START_HEAD,
   START_LENGTH,
+  SPRITE_URL,
   STEP_MS,
   W,
   type Cell,
@@ -166,8 +175,137 @@ export const createEngine: CreateEngine = (canvas, cb) => {
     }
   }
 
+  const ctx = canvas.getContext("2d")!;
   let paused = false;
   let running = false;
+  let rafId = 0;
+  let lastTime: number | null = null; // null = next frame uses dt = 0
+
+  // Apple sprite: loaded inside start(), never at module level.
+  let sheet: HTMLImageElement | null = null;
+  let sheetStatus: "idle" | "loading" | "ready" | "error" = "idle";
+
+  function loadSheet() {
+    if (sheetStatus !== "idle") return;
+    sheetStatus = "loading";
+    const img = new Image();
+    sheet = img;
+    img.onload = () => {
+      if (!running || sheet !== img) return; // stopped while loading
+      sheetStatus = "ready";
+    };
+    img.onerror = () => {
+      if (!running || sheet !== img) return;
+      console.error(`Snake: failed to load ${SPRITE_URL}`);
+      sheetStatus = "error"; // flat-circle fallback keeps the game playable
+    };
+    img.src = SPRITE_URL;
+  }
+
+  function drawBoard() {
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        ctx.fillStyle = (col + row) % 2 === 0 ? COLOR_BOARD_A : COLOR_BOARD_B;
+        ctx.fillRect(col * CELL, row * CELL, CELL, CELL);
+      }
+    }
+  }
+
+  function drawApple() {
+    const a = game.apple;
+    if (!a) return;
+    const cx = a.col * CELL + CELL / 2;
+    const cy = a.row * CELL + CELL / 2;
+    if (sheetStatus === "ready" && sheet) {
+      // Keep the sprite aspect ratio (110x160), centered in the cell.
+      const h = CELL * 0.9;
+      const w = (h * APPLE_SPRITE.w) / APPLE_SPRITE.h;
+      ctx.drawImage(
+        sheet,
+        APPLE_SPRITE.x,
+        APPLE_SPRITE.y,
+        APPLE_SPRITE.w,
+        APPLE_SPRITE.h,
+        cx - w / 2,
+        cy - h / 2,
+        w,
+        h,
+      );
+    } else {
+      ctx.fillStyle = COLOR_APPLE_FALLBACK;
+      ctx.beginPath();
+      ctx.arc(cx, cy, CELL * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function drawSnake() {
+    const cells = game.snake;
+    const center = (i: number) => ({
+      x: cells[i].col * CELL + CELL / 2,
+      y: cells[i].row * CELL + CELL / 2,
+    });
+
+    // Body: one rounded line through the cell centers.
+    ctx.strokeStyle = COLOR_SNAKE;
+    ctx.lineWidth = CELL * 0.72;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    for (let i = 0; i < cells.length; i++) {
+      const c = center(i);
+      if (i === 0) ctx.moveTo(c.x, c.y);
+      else ctx.lineTo(c.x, c.y);
+    }
+    ctx.stroke();
+
+    // Head: slightly bigger, two eyes looking in the move direction.
+    const h = center(0);
+    ctx.fillStyle = COLOR_SNAKE;
+    ctx.beginPath();
+    ctx.arc(h.x, h.y, CELL * 0.45, 0, Math.PI * 2);
+    ctx.fill();
+
+    const d = DIRS[game.dir];
+    const fx = d.col; // forward
+    const fy = d.row;
+    const sx = -d.row; // sideways
+    const sy = d.col;
+    for (const side of [-1, 1]) {
+      const ex = h.x + fx * CELL * 0.12 + sx * side * CELL * 0.17;
+      const ey = h.y + fy * CELL * 0.12 + sy * side * CELL * 0.17;
+      ctx.fillStyle = COLOR_EYE_WHITE;
+      ctx.beginPath();
+      ctx.arc(ex, ey, CELL * 0.11, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = COLOR_EYE_PUPIL;
+      ctx.beginPath();
+      ctx.arc(
+        ex + fx * CELL * 0.04,
+        ey + fy * CELL * 0.04,
+        CELL * 0.055,
+        0,
+        Math.PI * 2,
+      );
+      ctx.fill();
+    }
+  }
+
+  function draw() {
+    drawBoard();
+    if (sheetStatus === "ready" || sheetStatus === "error") drawApple();
+    drawSnake();
+  }
+
+  function frame(ts: number) {
+    const dt = lastTime === null ? 0 : Math.min((ts - lastTime) / 1000, 0.05);
+    lastTime = paused ? null : ts;
+    const ready = sheetStatus === "ready" || sheetStatus === "error";
+    if (!paused && ready) game.update(dt);
+    emitIfChanged();
+    draw();
+    rafId = requestAnimationFrame(frame);
+  }
 
   function isTyping(e: KeyboardEvent) {
     const t = e.target;
@@ -195,24 +333,38 @@ export const createEngine: CreateEngine = (canvas, cb) => {
     start() {
       if (running) return;
       running = true;
+      lastTime = null;
       window.addEventListener("keydown", onKeyDown);
       window.addEventListener("blur", clearInput);
+      loadSheet();
       emitIfChanged();
+      rafId = requestAnimationFrame(frame);
     },
     stop() {
       running = false;
+      cancelAnimationFrame(rafId);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("blur", clearInput);
       clearInput();
+      if (sheetStatus === "loading") {
+        if (sheet) {
+          sheet.onload = null;
+          sheet.onerror = null;
+        }
+        sheet = null;
+        sheetStatus = "idle"; // reload on the next start()
+      }
     },
     setPaused(p) {
       paused = p;
+      lastTime = null;
       clearInput();
     },
     restart() {
       game.reset();
       overReported = false;
       lastSnap = null;
+      lastTime = null;
       emitIfChanged();
     },
   };
