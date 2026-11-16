@@ -10,6 +10,8 @@ import {
   PIECE_TYPES,
   PLAYFIELD_W,
   PREVIEW_X,
+  REPEAT_DELAY,
+  REPEAT_INTERVAL,
   ROWS,
   W,
   createBoard,
@@ -290,10 +292,81 @@ export const createEngine: CreateEngine = (canvas, cb) => {
     drawPreview();
   }
 
+  // Held-key repeat: code -> seconds until the next repeat.
+  const held = new Map<string, number>();
+  const REPEATING = ["ArrowLeft", "ArrowRight", "ArrowDown"];
+
+  function act(code: string) {
+    switch (code) {
+      case "ArrowLeft":
+        game.moveX(-1);
+        break;
+      case "ArrowRight":
+        game.moveX(1);
+        break;
+      case "ArrowDown":
+        game.softDrop();
+        break;
+      case "ArrowUp":
+      case "KeyX":
+        game.rotate();
+        break;
+      case "Space":
+        game.hardDrop();
+        break;
+    }
+  }
+
+  function isTyping(e: KeyboardEvent) {
+    const t = e.target;
+    return (
+      t instanceof HTMLElement && ["INPUT", "TEXTAREA"].includes(t.tagName)
+    );
+  }
+
+  function onKeyDown(e: KeyboardEvent) {
+    if (isTyping(e)) return;
+    if (
+      ["Space", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(
+        e.code,
+      )
+    )
+      e.preventDefault();
+    if (paused || game.over || e.repeat) return;
+    if (REPEATING.includes(e.code)) {
+      if (held.has(e.code)) return;
+      held.set(e.code, REPEAT_DELAY);
+    }
+    act(e.code);
+    emitIfChanged();
+  }
+
+  function clearInput() {
+    held.clear();
+  }
+
+  function onKeyUp(e: KeyboardEvent) {
+    held.delete(e.code);
+  }
+
+  function applyRepeats(dt: number) {
+    for (const [code, t] of held) {
+      let left = t - dt;
+      while (left <= 0 && !game.over) {
+        act(code);
+        left += REPEAT_INTERVAL;
+      }
+      held.set(code, left);
+    }
+  }
+
   function frame(ts: number) {
     const dt = lastTime === null ? 0 : Math.min((ts - lastTime) / 1000, 0.05);
     lastTime = paused ? null : ts;
-    if (!paused) game.tick(dt);
+    if (!paused) {
+      game.tick(dt);
+      applyRepeats(dt);
+    }
     emitIfChanged();
     draw();
     rafId = requestAnimationFrame(frame);
@@ -306,21 +379,30 @@ export const createEngine: CreateEngine = (canvas, cb) => {
       if (running) return;
       running = true;
       lastTime = null;
+      window.addEventListener("keydown", onKeyDown);
+      window.addEventListener("keyup", onKeyUp);
+      window.addEventListener("blur", clearInput);
       emitIfChanged();
       rafId = requestAnimationFrame(frame);
     },
     stop() {
       running = false;
       cancelAnimationFrame(rafId);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", clearInput);
+      clearInput();
     },
     setPaused(p) {
       paused = p;
       lastTime = null;
+      clearInput();
     },
     restart() {
       game.reset();
       paused = false;
       lastTime = null;
+      clearInput();
       overReported = false;
       lastSnap = null;
       emitIfChanged();
