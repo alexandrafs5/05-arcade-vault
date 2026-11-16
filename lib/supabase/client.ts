@@ -1,4 +1,5 @@
 import { createBrowserClient } from "@supabase/ssr";
+import type { Database } from "./database.types";
 
 // Browser client. Call inside effects or event handlers, not at module level.
 export function createClient() {
@@ -12,5 +13,5 @@ export function createClient() {
     );
   }
 
-  return createBrowserClient(url, key);
+  return createBrowserClient<Database>(url, key);
 }
