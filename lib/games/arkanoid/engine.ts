@@ -1,3 +1,4 @@
+import type { CreateEngine, EngineSnapshot, EngineState } from "../types";
 import {
   BALL_SIZE,
   BASE_BALL_VX,
@@ -8,15 +9,21 @@ import {
   BLOCKS_ORIGIN_X,
   BLOCKS_ORIGIN_Y,
   EXPLOSION_DURATION,
+  EXPLOSION_FRAME_COUNT,
+  EXPLOSION_FRAMES,
+  FALLBACK_COLORS,
   H,
   PADDLE_BOUNCE_TOLERANCE,
   PADDLE_H,
   PADDLE_SPEED,
   PADDLE_W,
   PADDLE_Y,
+  SPRITES,
+  SPRITESHEET_URL,
   START_LIVES,
   W,
   type BlockColor,
+  type Rect,
 } from "./constants";
 import { LEVELS } from "./levels";
 
@@ -39,7 +46,7 @@ export type Explosion = {
 };
 
 // Game rules, no canvas and no timers. Everything lives in this closure.
-export function createGame() {
+function createGame() {
   const paddle = { x: 0, y: PADDLE_Y, w: PADDLE_W, h: PADDLE_H };
   const ball = {
     x: 0,
@@ -200,3 +207,171 @@ export function createGame() {
     },
   };
 }
+
+type SpriteStatus = "idle" | "loading" | "ready" | "error";
+
+export const createEngine: CreateEngine = (canvas, cb) => {
+  const ctx = canvas.getContext("2d")!;
+  canvas.width = W;
+  canvas.height = H;
+
+  const game = createGame();
+  let paused = false;
+  let running = false;
+  let rafId = 0;
+  let lastTime: number | null = null; // null = next frame uses dt = 0
+  let overReported = false;
+  let lastSnap: EngineSnapshot | null = null;
+
+  // Paddle direction from the keyboard (wired in the input step).
+  const inputDir = (): -1 | 0 | 1 => 0;
+
+  // Spritesheet: loaded inside start(), never at module level.
+  let sheet: HTMLImageElement | null = null;
+  let sheetStatus: SpriteStatus = "idle";
+
+  function loadSheet() {
+    if (sheetStatus !== "idle") return;
+    sheetStatus = "loading";
+    const img = new Image();
+    sheet = img;
+    img.onload = () => {
+      if (!running || sheet !== img) return; // stopped while loading
+      sheetStatus = "ready";
+    };
+    img.onerror = () => {
+      if (!running || sheet !== img) return;
+      console.error(`Arkanoid: failed to load ${SPRITESHEET_URL}`);
+      sheetStatus = "error"; // flat-rect fallback keeps the game playable
+    };
+    img.src = SPRITESHEET_URL;
+  }
+
+  function emitIfChanged() {
+    const state: EngineState = game.over ? "gameover" : "playing";
+    if (
+      lastSnap &&
+      lastSnap.score === game.score &&
+      lastSnap.state === state &&
+      lastSnap.hud.lives === game.lives &&
+      lastSnap.hud.level === game.level
+    )
+      return;
+    lastSnap = {
+      score: game.score,
+      state,
+      hud: { lives: game.lives, level: game.level },
+    };
+    cb.onChange(lastSnap);
+    if (state === "gameover" && !overReported) {
+      overReported = true;
+      cb.onGameOver(game.score);
+    }
+  }
+
+  function drawSprite(
+    r: Rect,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    fallback: string,
+  ) {
+    if (sheetStatus === "ready" && sheet) {
+      ctx.drawImage(sheet, r.sx, r.sy, r.sw, r.sh, x, y, w, h);
+    } else {
+      ctx.fillStyle = fallback;
+      ctx.fillRect(x, y, w, h);
+    }
+  }
+
+  function draw() {
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, W, H);
+    if (sheetStatus !== "ready" && sheetStatus !== "error") return;
+
+    for (const b of game.blocks) {
+      if (b.alive)
+        drawSprite(
+          SPRITES.blocks[b.color],
+          b.x,
+          b.y,
+          b.w,
+          b.h,
+          FALLBACK_COLORS[b.color],
+        );
+    }
+
+    for (const e of game.explosions) {
+      const i = Math.min(
+        Math.floor((e.elapsed / EXPLOSION_DURATION) * EXPLOSION_FRAME_COUNT),
+        EXPLOSION_FRAME_COUNT - 1,
+      );
+      drawSprite(
+        EXPLOSION_FRAMES[e.color][i],
+        e.x,
+        e.y,
+        e.w,
+        e.h,
+        "rgba(255,255,255,0.6)",
+      );
+    }
+
+    const { paddle, ball } = game;
+    drawSprite(
+      SPRITES.paddle,
+      paddle.x,
+      paddle.y,
+      paddle.w,
+      paddle.h,
+      "#e8e8f0",
+    );
+    drawSprite(SPRITES.ball, ball.x, ball.y, ball.w, ball.h, "#ffffff");
+  }
+
+  function frame(ts: number) {
+    const dt = lastTime === null ? 0 : Math.min((ts - lastTime) / 1000, 0.05);
+    lastTime = paused ? null : ts;
+    const ready = sheetStatus === "ready" || sheetStatus === "error";
+    if (!paused && ready) game.update(dt, inputDir());
+    emitIfChanged();
+    draw();
+    rafId = requestAnimationFrame(frame);
+  }
+
+  game.reset();
+
+  return {
+    start() {
+      if (running) return;
+      running = true;
+      lastTime = null;
+      loadSheet();
+      emitIfChanged();
+      rafId = requestAnimationFrame(frame);
+    },
+    stop() {
+      running = false;
+      cancelAnimationFrame(rafId);
+      if (sheetStatus === "loading") {
+        if (sheet) {
+          sheet.onload = null;
+          sheet.onerror = null;
+        }
+        sheet = null;
+        sheetStatus = "idle"; // reload on the next start()
+      }
+    },
+    setPaused(p) {
+      paused = p;
+      lastTime = null;
+    },
+    restart() {
+      game.reset();
+      overReported = false;
+      lastSnap = null;
+      lastTime = null;
+      emitIfChanged();
+    },
+  };
+};
