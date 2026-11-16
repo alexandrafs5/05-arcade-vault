@@ -15,7 +15,12 @@ export type Game = {
   plays: string;
 };
 
-export type ScoreRow = { rank: number; name: string; score: number; date: string };
+export type ScoreRow = {
+  rank: number;
+  name: string;
+  score: number;
+  date: string;
+};
 
 export const GAMES: Game[] = [
   {
@@ -77,7 +82,7 @@ export const GAMES: Game[] = [
     id: "rocas",
     title: "ROCAS",
     short: "Pulveriza asteroides en gravedad cero.",
-    long: "Tu nave triangular flota en vacío absoluto. Dispara y rota para dividir rocas en fragmentos cada vez más pequeños. Cuidado con los OVNIs en el horizonte.",
+    long: "Tu nave triangular flota en vacío absoluto. Dispara y rota para dividir rocas en fragmentos cada vez más pequeños.",
     cat: "SHOOTER",
     cover: "cover-rocas",
     color: "yellow",
@@ -111,9 +116,24 @@ export const GAMES: Game[] = [
 export const CATS = ["TODOS", "ARCADE", "PUZZLE", "SHOOTER", "VERSUS"] as const;
 
 const PLAYERS = [
-  "PX_KAI", "NEONFOX", "Z3R0COOL", "M00NRYU", "VAULT_07", "GLITCHA",
-  "ATARI_KID", "CYBER_LU", "MAGENTA88", "SCANLINE", "BIT_LORD", "ARKADYA",
-  "DROID_X", "RGB_QUEEN", "PIXEL_DAD", "RETROVIRA", "VECTORX", "JOY_STK",
+  "PX_KAI",
+  "NEONFOX",
+  "Z3R0COOL",
+  "M00NRYU",
+  "VAULT_07",
+  "GLITCHA",
+  "ATARI_KID",
+  "CYBER_LU",
+  "MAGENTA88",
+  "SCANLINE",
+  "BIT_LORD",
+  "ARKADYA",
+  "DROID_X",
+  "RGB_QUEEN",
+  "PIXEL_DAD",
+  "RETROVIRA",
+  "VECTORX",
+  "JOY_STK",
 ];
 
 export function getGame(id: string): Game | undefined {
@@ -136,9 +156,16 @@ export function seededScores(seed: number, count = 12): ScoreRow[] {
     const score = base - i * Math.floor(2000 + rand() * 4000);
     const day = String(1 + Math.floor(rand() * 28)).padStart(2, "0");
     const mon = String(1 + Math.floor(rand() * 12)).padStart(2, "0");
-    rows.push({ rank: i + 1, name, score: Math.max(score, 1000), date: `${day}/${mon}/2026` });
+    rows.push({
+      rank: i + 1,
+      name,
+      score: Math.max(score, 1000),
+      date: `${day}/${mon}/2026`,
+    });
   }
-  return rows.sort((a, b) => b.score - a.score).map((r, i) => ({ ...r, rank: i + 1 }));
+  return rows
+    .sort((a, b) => b.score - a.score)
+    .map((r, i) => ({ ...r, rank: i + 1 }));
 }
 
 // ===== Home page mock data (ported from references/templates/home-about/home.jsx) =====
@@ -151,16 +178,42 @@ export type Feature = {
   desc: string;
   color: NeonColor;
 };
-export type RecentScore = { player: string; game: string; score: number; when: string; color: NeonColor };
+export type RecentScore = {
+  player: string;
+  game: string;
+  score: number;
+  when: string;
+  color: NeonColor;
+};
 export type TopPlayer = { rank: number; player: string; score: number };
 export type HomeStat = { value: string; unit: string; sub: string };
 export type FaqItem = { q: string; a: string };
 
 export const FEATURES: Feature[] = [
-  { icon: "GAMEPAD", title: "JUEGOS CLÁSICOS", desc: "Arkanoid, Tetris, Snake y muchos más. Los mejores arcades de todos los tiempos en un solo lugar.", color: "cyan" },
-  { icon: "FREE", title: "100% GRATIS", desc: "Sin suscripciones, sin pagos ocultos. Todos los juegos disponibles de forma gratuita.", color: "yellow" },
-  { icon: "TROPHY", title: "LADDER BOARDS", desc: "Compite con jugadores de todo el mundo. Escala el ranking y demuestra quién es el mejor.", color: "magenta" },
-  { icon: "ROCKET", title: "SIEMPRE CRECIENDO", desc: "Agregamos nuevos juegos constantemente. Vuelve seguido, siempre habrá algo nuevo que jugar.", color: "green" },
+  {
+    icon: "GAMEPAD",
+    title: "JUEGOS CLÁSICOS",
+    desc: "Arkanoid, Tetris, Snake y muchos más. Los mejores arcades de todos los tiempos en un solo lugar.",
+    color: "cyan",
+  },
+  {
+    icon: "FREE",
+    title: "100% GRATIS",
+    desc: "Sin suscripciones, sin pagos ocultos. Todos los juegos disponibles de forma gratuita.",
+    color: "yellow",
+  },
+  {
+    icon: "TROPHY",
+    title: "LADDER BOARDS",
+    desc: "Compite con jugadores de todo el mundo. Escala el ranking y demuestra quién es el mejor.",
+    color: "magenta",
+  },
+  {
+    icon: "ROCKET",
+    title: "SIEMPRE CRECIENDO",
+    desc: "Agregamos nuevos juegos constantemente. Vuelve seguido, siempre habrá algo nuevo que jugar.",
+    color: "green",
+  },
 ];
 
 export const HOME_STATS: HomeStat[] = [
@@ -170,13 +223,55 @@ export const HOME_STATS: HomeStat[] = [
 ];
 
 export const RECENT_SCORES: RecentScore[] = [
-  { player: "NEONFOX", game: "Caída", score: 184220, when: "hace 2 min", color: "magenta" },
-  { player: "PX_KAI", game: "Glotón", score: 96400, when: "hace 5 min", color: "yellow" },
-  { player: "Z3R0COOL", game: "Invasores", score: 54190, when: "hace 8 min", color: "green" },
-  { player: "VAULT_07", game: "Rocas", score: 41200, when: "hace 12 min", color: "cyan" },
-  { player: "GLITCHA", game: "Bloque Buster", score: 28450, when: "hace 18 min", color: "cyan" },
-  { player: "ARKADYA", game: "Serpentina", score: 7820, when: "hace 24 min", color: "green" },
-  { player: "CYBER_LU", game: "Ranaria", score: 18900, when: "hace 31 min", color: "yellow" },
+  {
+    player: "NEONFOX",
+    game: "Caída",
+    score: 184220,
+    when: "hace 2 min",
+    color: "magenta",
+  },
+  {
+    player: "PX_KAI",
+    game: "Glotón",
+    score: 96400,
+    when: "hace 5 min",
+    color: "yellow",
+  },
+  {
+    player: "Z3R0COOL",
+    game: "Invasores",
+    score: 54190,
+    when: "hace 8 min",
+    color: "green",
+  },
+  {
+    player: "VAULT_07",
+    game: "Rocas",
+    score: 41200,
+    when: "hace 12 min",
+    color: "cyan",
+  },
+  {
+    player: "GLITCHA",
+    game: "Bloque Buster",
+    score: 28450,
+    when: "hace 18 min",
+    color: "cyan",
+  },
+  {
+    player: "ARKADYA",
+    game: "Serpentina",
+    score: 7820,
+    when: "hace 24 min",
+    color: "green",
+  },
+  {
+    player: "CYBER_LU",
+    game: "Ranaria",
+    score: 18900,
+    when: "hace 31 min",
+    color: "yellow",
+  },
 ];
 
 export const TOP_PLAYERS: TopPlayer[] = [
@@ -197,7 +292,16 @@ export const PRICE_FEATURES: string[] = [
 ];
 
 export const FAQ: FaqItem[] = [
-  { q: "¿REALMENTE ES GRATIS?", a: "Sí. Arcade Vault es un proyecto sin fines de lucro hecho por amor a los clásicos. No hay versión \"premium\" escondida." },
-  { q: "¿NECESITO CREAR CUENTA?", a: "No. Puedes jugar como invitado. Si quieres guardar tu puntuación y aparecer en el ranking, regístrate en 10 segundos." },
-  { q: "¿CÓMO SOBREVIVEN SIN COBRAR?", a: "Es un proyecto comunitario. Si te gusta, compártelo. Esa es toda la moneda que aceptamos." },
+  {
+    q: "¿REALMENTE ES GRATIS?",
+    a: 'Sí. Arcade Vault es un proyecto sin fines de lucro hecho por amor a los clásicos. No hay versión "premium" escondida.',
+  },
+  {
+    q: "¿NECESITO CREAR CUENTA?",
+    a: "No. Puedes jugar como invitado. Si quieres guardar tu puntuación y aparecer en el ranking, regístrate en 10 segundos.",
+  },
+  {
+    q: "¿CÓMO SOBREVIVEN SIN COBRAR?",
+    a: "Es un proyecto comunitario. Si te gusta, compártelo. Esa es toda la moneda que aceptamos.",
+  },
 ];
