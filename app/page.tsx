@@ -5,21 +5,124 @@ import { FeatureIcon } from "@/components/feature-icon";
 import { MiniCard } from "@/components/mini-card";
 import { Reveal } from "@/components/reveal";
 import { Silhouettes } from "@/components/silhouettes";
+import { FAQ, FEATURES, PRICE_FEATURES } from "@/lib/data";
+import { fmtNumber, fmtTimeAgo } from "@/lib/format";
 import {
-  FAQ,
-  FEATURES,
-  HOME_STATS,
-  PRICE_FEATURES,
-  RECENT_SCORES,
-  TOP_PLAYERS,
-} from "@/lib/data";
-import { getGames } from "@/lib/queries";
+  getGames,
+  getHomeStats,
+  getRecentScores,
+  getTopScores,
+} from "@/lib/queries";
 
 export const metadata: Metadata = {
   title: "Arcade Vault · El arcade clásico está de vuelta",
 };
 
-const fmt = (n: number) => n.toLocaleString("es-ES");
+function EmptyList({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        padding: "32px 12px",
+        textAlign: "center",
+        color: "var(--ink-faint)",
+      }}
+    >
+      <div
+        className="pixel"
+        style={{ fontSize: 12, color: "var(--magenta)", marginBottom: 8 }}
+      >
+        AÚN NO HAY PUNTUACIONES
+      </div>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+async function StatsStrip() {
+  const stats = await getHomeStats();
+  const blocks = [
+    { value: fmtNumber(stats.games), unit: "JUEGOS", sub: "DISPONIBLES AHORA" },
+    {
+      value: fmtNumber(stats.scores),
+      unit: "PUNTUACIONES",
+      sub: "GUARDADAS EN EL SALÓN",
+    },
+    {
+      value: stats.topScore === null ? "—" : fmtNumber(stats.topScore),
+      unit: "RÉCORD",
+      sub: "LA MARCA MÁS ALTA",
+    },
+  ];
+  return (
+    <div className="stats-inner">
+      {blocks.map((st, i) => (
+        <div
+          key={st.unit}
+          className="stat-block"
+          style={{ transitionDelay: i * 90 + "ms" }}
+        >
+          <div className="stat-n neon-yellow">{st.value}</div>
+          <div className="stat-u pixel">{st.unit}</div>
+          <div className="stat-s">{st.sub}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+async function RecentScores() {
+  const rows = await getRecentScores(7);
+  if (rows.length === 0) {
+    return <EmptyList>Juega y guarda la primera marca.</EmptyList>;
+  }
+  return (
+    <div className="ticker">
+      {rows.map((r, i) => (
+        <div
+          key={r.id}
+          className="tick-row"
+          style={{ animationDelay: i * 60 + "ms" }}
+        >
+          <span className={"tk-p neon-" + r.game.color}>{r.name}</span>
+          <span className="tk-mid">▸ {r.game.title}</span>
+          <span className="tk-s">+{fmtNumber(r.score)}</span>
+          <span className="tk-t">{fmtTimeAgo(r.created_at)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+async function TopScores() {
+  const rows = await getTopScores(null, 5);
+  if (rows.length === 0) {
+    return <EmptyList>Sé el primero en el salón.</EmptyList>;
+  }
+  const max = rows[0].score;
+  return (
+    <div className="top-list">
+      {rows.map((r, i) => (
+        <div key={r.id} className={"top-row" + (i < 3 ? ` top${i + 1}` : "")}>
+          <span className="tp-rk">#{String(i + 1).padStart(2, "0")}</span>
+          <span className="tp-bar">
+            <span
+              className="tp-fill"
+              style={{
+                width: (max > 0 ? Math.max(8, (r.score / max) * 100) : 8) + "%",
+              }}
+            ></span>
+          </span>
+          <span className="tp-p">
+            {r.name} · {r.game.title}
+          </span>
+          <span className="tp-s">{fmtNumber(r.score)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const listFallback = <div style={{ minHeight: 120 }} />;
 
 async function GamesRail() {
   const games = await getGames();
@@ -110,19 +213,11 @@ export default function Home() {
 
       {/* STATS */}
       <Reveal as="section" className="home-stats">
-        <div className="stats-inner">
-          {HOME_STATS.map((st, i) => (
-            <div
-              key={st.unit}
-              className="stat-block"
-              style={{ transitionDelay: i * 90 + "ms" }}
-            >
-              <div className="stat-n neon-yellow">{st.value}</div>
-              <div className="stat-u pixel">{st.unit}</div>
-              <div className="stat-s">{st.sub}</div>
-            </div>
-          ))}
-        </div>
+        <Suspense
+          fallback={<div className="stats-inner" style={{ minHeight: 120 }} />}
+        >
+          <StatsStrip />
+        </Suspense>
       </Reveal>
 
       {/* ACTIVITY */}
@@ -137,51 +232,23 @@ export default function Home() {
             <div className="ac-head">
               <div className="ac-title pixel">▸ ÚLTIMAS PUNTUACIONES</div>
             </div>
-            <div className="ticker">
-              {RECENT_SCORES.map((r, i) => (
-                <div
-                  key={r.player}
-                  className="tick-row"
-                  style={{ animationDelay: i * 60 + "ms" }}
-                >
-                  <span className={"tk-p neon-" + r.color}>{r.player}</span>
-                  <span className="tk-mid">▸ {r.game}</span>
-                  <span className="tk-s">+{fmt(r.score)}</span>
-                  <span className="tk-t">{r.when}</span>
-                </div>
-              ))}
-            </div>
+            <Suspense fallback={listFallback}>
+              <RecentScores />
+            </Suspense>
           </div>
 
           <div className="activity-card">
             <div className="ac-head">
               <div className="ac-title pixel neon-magenta">
-                ▸ TOP JUGADORES · HOY
+                ▸ MEJORES PUNTUACIONES
               </div>
               <Link href="/salon" className="lb-link">
                 VER SALÓN →
               </Link>
             </div>
-            <div className="top-list">
-              {TOP_PLAYERS.map((r, i) => (
-                <div
-                  key={r.player}
-                  className={"top-row" + (i < 3 ? ` top${i + 1}` : "")}
-                >
-                  <span className="tp-rk">
-                    #{String(r.rank).padStart(2, "0")}
-                  </span>
-                  <span className="tp-bar">
-                    <span
-                      className="tp-fill"
-                      style={{ width: 100 - i * 16 + "%" }}
-                    ></span>
-                  </span>
-                  <span className="tp-p">{r.player}</span>
-                  <span className="tp-s">{fmt(r.score)}</span>
-                </div>
-              ))}
-            </div>
+            <Suspense fallback={listFallback}>
+              <TopScores />
+            </Suspense>
           </div>
         </div>
       </Reveal>
