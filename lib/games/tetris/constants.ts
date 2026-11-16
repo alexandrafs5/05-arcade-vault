@@ -11,6 +11,8 @@ export const PREVIEW_X = PLAYFIELD_W;
 export const W = 450;
 export const H = ROWS * BLOCK; // 600
 
+export const GRID_LINE = "rgba(255, 255, 255, 0.06)";
+
 // Held-key repeat for left, right and soft drop (seconds).
 // Not in the original, which relied on OS key repeat.
 export const REPEAT_DELAY = 0.17;

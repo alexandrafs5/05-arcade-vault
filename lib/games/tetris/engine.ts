@@ -1,10 +1,17 @@
 import type { CreateEngine, EngineSnapshot, EngineState } from "../types";
 import {
+  BLOCK,
+  COLORS,
   COLS,
+  GRID_LINE,
+  H,
   LINE_SCORES,
   PIECES,
   PIECE_TYPES,
+  PLAYFIELD_W,
+  PREVIEW_X,
   ROWS,
+  W,
   createBoard,
   rotateCW,
   type Shape,
@@ -169,9 +176,32 @@ function createGame() {
   };
 }
 
-export const createEngine: CreateEngine = (_canvas, cb) => {
+function drawBlock(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  colorIndex: number,
+  alpha = 1,
+) {
+  if (!colorIndex) return;
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = COLORS[colorIndex] ?? "#fff";
+  ctx.fillRect(x * BLOCK + 1, y * BLOCK + 1, BLOCK - 2, BLOCK - 2);
+  ctx.fillStyle = "rgba(255,255,255,0.12)"; // highlight
+  ctx.fillRect(x * BLOCK + 1, y * BLOCK + 1, BLOCK - 2, 4);
+  ctx.globalAlpha = 1;
+}
+
+export const createEngine: CreateEngine = (canvas, cb) => {
+  const ctx = canvas.getContext("2d")!;
+  canvas.width = W;
+  canvas.height = H;
+
   const game = createGame();
   let paused = false;
+  let running = false;
+  let rafId = 0;
+  let lastTime: number | null = null; // null = next frame uses dt = 0
   let overReported = false;
   let lastSnap: EngineSnapshot | null = null;
 
@@ -197,19 +227,100 @@ export const createEngine: CreateEngine = (_canvas, cb) => {
     }
   }
 
+  function drawPlayfield() {
+    ctx.strokeStyle = GRID_LINE;
+    ctx.lineWidth = 0.5;
+    for (let c = 1; c < COLS; c++) {
+      ctx.beginPath();
+      ctx.moveTo(c * BLOCK, 0);
+      ctx.lineTo(c * BLOCK, H);
+      ctx.stroke();
+    }
+    for (let r = 1; r < ROWS; r++) {
+      ctx.beginPath();
+      ctx.moveTo(0, r * BLOCK);
+      ctx.lineTo(PLAYFIELD_W, r * BLOCK);
+      ctx.stroke();
+    }
+
+    const { board, current } = game;
+    for (let r = 0; r < ROWS; r++)
+      for (let c = 0; c < COLS; c++) drawBlock(ctx, c, r, board[r][c]);
+
+    const gy = game.ghostY();
+    for (let r = 0; r < current.shape.length; r++)
+      for (let c = 0; c < current.shape[r].length; c++)
+        if (current.shape[r][c])
+          drawBlock(ctx, current.x + c, gy + r, current.shape[r][c], 0.2);
+
+    for (let r = 0; r < current.shape.length; r++)
+      for (let c = 0; c < current.shape[r].length; c++)
+        drawBlock(ctx, current.x + c, current.y + r, current.shape[r][c]);
+  }
+
+  // Next piece in the side strip, centered in a 4x4 cell box.
+  function drawPreview() {
+    ctx.strokeStyle = "rgba(255,255,255,0.25)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(PREVIEW_X + 0.5, 0);
+    ctx.lineTo(PREVIEW_X + 0.5, H);
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(255,255,255,0.6)";
+    ctx.font = "12px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText("SIGUIENTE", PREVIEW_X + (W - PREVIEW_X) / 2, 28);
+
+    const shape = game.next.shape;
+    const offX = Math.floor((4 - shape[0].length) / 2);
+    const offY = Math.floor((4 - shape.length) / 2);
+    ctx.save();
+    ctx.translate(PREVIEW_X + (W - PREVIEW_X - 4 * BLOCK) / 2, 44);
+    for (let r = 0; r < shape.length; r++)
+      for (let c = 0; c < shape[r].length; c++)
+        drawBlock(ctx, offX + c, offY + r, shape[r][c]);
+    ctx.restore();
+  }
+
+  function draw() {
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, W, H);
+    drawPlayfield();
+    drawPreview();
+  }
+
+  function frame(ts: number) {
+    const dt = lastTime === null ? 0 : Math.min((ts - lastTime) / 1000, 0.05);
+    lastTime = paused ? null : ts;
+    if (!paused) game.tick(dt);
+    emitIfChanged();
+    draw();
+    rafId = requestAnimationFrame(frame);
+  }
+
   game.reset();
 
   return {
     start() {
+      if (running) return;
+      running = true;
+      lastTime = null;
       emitIfChanged();
+      rafId = requestAnimationFrame(frame);
     },
-    stop() {},
+    stop() {
+      running = false;
+      cancelAnimationFrame(rafId);
+    },
     setPaused(p) {
       paused = p;
+      lastTime = null;
     },
     restart() {
       game.reset();
       paused = false;
+      lastTime = null;
       overReported = false;
       lastSnap = null;
       emitIfChanged();
