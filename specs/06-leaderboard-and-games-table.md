@@ -1,6 +1,6 @@
 # SPEC 06 — Games table and real leaderboards in Supabase
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 01, SPEC 04, SPEC 05
 > **Date:** 2026-11-16
 > **Revised:** 2026-11-16 — after steps 1–5 were implemented, the scope changed: no fake data anywhere, so the catalog keeps only ROCAS (the one real game). Steps 6–13 below are the remaining work.
@@ -150,30 +150,30 @@ Remaining work:
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` and `npm run build` finish with no errors.
-- [ ] `games` has exactly 1 row: `rocas`, with the same title, copy, category, cover, and color as the old `GAMES` entry, and `sort_order` 1.
-- [ ] RLS is enabled on `games` and `scores`; `get_advisors` (security) reports no missing-RLS finding for either table.
-- [ ] An `anon` insert into `scores` with `score = -1`, `score = 10000001`, an empty name, a 13-character name, or an unknown `game_id` is rejected by the database.
-- [ ] An `anon` `update` or `delete` on `scores` and any `anon` write to `games` affect 0 rows or error.
-- [ ] No secret or service-role key appears in the repo or in the client bundle.
-- [ ] Saving a score from `/juegos/rocas/jugar` inserts one row in `scores` with `game_id = 'rocas'`, the typed name, and the final score.
-- [ ] A guest (no `av_user`) can save a score; a logged-in mock user can save a score.
-- [ ] If the insert fails (for example the network is offline), the modal shows an error and lets the player retry; no score is stored in `localStorage`.
-- [ ] `localStorage` has no `av_scores` key after saving, and no code reads or writes it.
-- [ ] `components/game-player.tsx` has no random-score timer and no mock arena; every score it shows or saves comes from the ROCAS engine.
-- [ ] `/salon` shows at most 20 rows for the selected game ordered by score descending, with rank, name, score, and `DD/MM/YYYY` date.
-- [ ] `/salon?game=rocas` selects the ROCAS tab; `/salon?game=xyz` falls back to the first game by `sort_order`.
-- [ ] `/salon` with no scores shows a Spanish empty state, not an empty table.
-- [ ] `/juegos/rocas` shows at most 10 rows, plus an empty state when there are none.
-- [ ] `best` and `plays` on the game card and on `/juegos/rocas` equal `max(score)` and `count(*)` from `scores`; with no scores they show `—` and `0`.
-- [ ] After saving a score and reloading `/salon`, the new row is visible with no manual cache clearing (no stale cache).
-- [ ] The home page "recent scores" shows the last 7 saved scores newest first with game title; "top scores" shows the 5 highest single scores with game name; both show an empty state when `scores` is empty.
-- [ ] The home stats block shows the real number of games, the real number of saved scores, and the real highest score (`—` when there are none); the text "12+", "MILES", and "GLOBAL" claims are gone.
-- [ ] `/biblioteca` and the home games rail show only ROCAS.
-- [ ] `lib/data.ts` no longer exports `GAMES`, `Game`, `getGame`, `seededScores`, `RECENT_SCORES`, `TOP_PLAYERS`, or `HOME_STATS`.
-- [ ] `/`, `/biblioteca`, `/salon`, `/acceso`, `/acerca`, `/juegos/rocas`, and `/juegos/rocas/jugar` render with no console errors.
-- [ ] `/juegos/does-not-exist` and `/juegos/caida` return the not-found page.
-- [ ] The ROCAS game still plays and shows HUD, pause, and game over exactly as in SPEC 05.
+- [x] `npm run lint` and `npm run build` finish with no errors.
+- [x] `games` has exactly 1 row: `rocas`, with the same title, copy, category, cover, and color as the old `GAMES` entry, and `sort_order` 1.
+- [x] RLS is enabled on `games` and `scores`; `get_advisors` (security) reports no missing-RLS finding for either table.
+- [x] An `anon` insert into `scores` with `score = -1`, `score = 10000001`, an empty name, a 13-character name, or an unknown `game_id` is rejected by the database.
+- [x] An `anon` `update` or `delete` on `scores` and any `anon` write to `games` affect 0 rows or error.
+- [x] No secret or service-role key appears in the repo or in the client bundle.
+- [x] Saving a score from `/juegos/rocas/jugar` inserts one row in `scores` with `game_id = 'rocas'`, the typed name, and the final score.
+- [x] A guest (no `av_user`) can save a score; a logged-in mock user can save a score.
+- [x] If the insert fails (for example the network is offline), the modal shows an error and lets the player retry; no score is stored in `localStorage`.
+- [x] `localStorage` has no `av_scores` key after saving, and no code reads or writes it.
+- [x] `components/game-player.tsx` has no random-score timer and no mock arena; every score it shows or saves comes from the ROCAS engine.
+- [x] `/salon` shows at most 20 rows for the selected game ordered by score descending, with rank, name, score, and `DD/MM/YYYY` date.
+- [x] `/salon?game=rocas` selects the ROCAS tab; `/salon?game=xyz` falls back to the first game by `sort_order`.
+- [x] `/salon` with no scores shows a Spanish empty state, not an empty table.
+- [x] `/juegos/rocas` shows at most 10 rows, plus an empty state when there are none.
+- [x] `best` and `plays` on the game card and on `/juegos/rocas` equal `max(score)` and `count(*)` from `scores`; with no scores they show `—` and `0`.
+- [x] After saving a score and reloading `/salon`, the new row is visible with no manual cache clearing (no stale cache).
+- [x] The home page "recent scores" shows the last 7 saved scores newest first with game title; "top scores" shows the 5 highest single scores with game name; both show an empty state when `scores` is empty.
+- [x] The home stats block shows the real number of games, the real number of saved scores, and the real highest score (`—` when there are none); the text "12+", "MILES", and "GLOBAL" claims are gone.
+- [x] `/biblioteca` and the home games rail show only ROCAS.
+- [x] `lib/data.ts` no longer exports `GAMES`, `Game`, `getGame`, `seededScores`, `RECENT_SCORES`, `TOP_PLAYERS`, or `HOME_STATS`.
+- [x] `/`, `/biblioteca`, `/salon`, `/acceso`, `/acerca`, `/juegos/rocas`, and `/juegos/rocas/jugar` render with no console errors.
+- [x] `/juegos/does-not-exist` and `/juegos/caida` return the not-found page.
+- [x] The ROCAS game still plays and shows HUD, pause, and game over exactly as in SPEC 05.
 
 ## Decisions
 
