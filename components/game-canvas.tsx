@@ -1,20 +1,18 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import {
-  createEngine,
-  type Engine,
-  type EngineSnapshot,
-} from "@/lib/games/asteroids/engine";
+import type { Engine, EngineSnapshot, GameDefinition } from "@/lib/games/types";
 
 type Props = {
+  definition: GameDefinition;
   paused: boolean;
   restartKey: number;
   onChange: (s: EngineSnapshot) => void;
   onGameOver: (finalScore: number) => void;
 };
 
-export function AsteroidsCanvas({
+export function GameCanvas({
+  definition,
   paused,
   restartKey,
   onChange,
@@ -37,7 +35,7 @@ export function AsteroidsCanvas({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const engine = createEngine(canvas, {
+    const engine = definition.createEngine(canvas, {
       onChange: (s) => onChangeRef.current(s),
       onGameOver: (finalScore) => onGameOverRef.current(finalScore),
     });
@@ -48,7 +46,7 @@ export function AsteroidsCanvas({
       engine.stop();
       engineRef.current = null;
     };
-  }, []);
+  }, [definition]);
 
   useEffect(() => {
     engineRef.current?.setPaused(paused);
@@ -63,9 +61,10 @@ export function AsteroidsCanvas({
   return (
     <canvas
       ref={canvasRef}
-      className="asteroids-canvas"
-      width={800}
-      height={600}
+      className="game-canvas"
+      width={definition.width}
+      height={definition.height}
+      style={{ aspectRatio: `${definition.width} / ${definition.height}` }}
     />
   );
 }

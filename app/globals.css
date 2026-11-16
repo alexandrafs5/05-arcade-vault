@@ -800,10 +800,10 @@ a {
   filter: drop-shadow(0 0 6px rgba(0, 255, 136, 0.6));
 }
 
-.cover-rocas {
+.cover-asteroids {
   background: radial-gradient(circle at 50% 50%, #0a0a30, #000);
 }
-.cover-rocas::after {
+.cover-asteroids::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -815,7 +815,7 @@ a {
     radial-gradient(circle at 12% 70%, var(--cyan) 0 2px, transparent 3px),
     radial-gradient(circle at 60% 20%, var(--cyan) 0 2px, transparent 3px);
 }
-.cover-rocas::before {
+.cover-asteroids::before {
   content: "▲";
   position: absolute;
   left: 48%;
@@ -1134,11 +1134,17 @@ a {
   box-shadow: 0 0 6px var(--green);
 }
 
-/* real game canvas (rocas): logic size stays 800x600, CSS scales it */
-.asteroids-canvas {
+/* real game canvas: logic size comes from the game definition, CSS scales it.
+   aspect-ratio is set inline. The canvas fills the 4:3 CRT screen by height and is
+   centered, so tall games (Tetris 3:4) show whole and 4:3 games fill the screen. */
+.game-canvas {
+  position: absolute;
+  inset: 0;
   display: block;
-  width: 100%;
-  aspect-ratio: 4 / 3;
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  margin: auto;
   background: #000;
 }
 
