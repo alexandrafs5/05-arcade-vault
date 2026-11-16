@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { seededScores } from "@/lib/data";
-import { getGame } from "@/lib/queries";
+import { fmtDate, fmtNumber } from "@/lib/format";
+import { getGame, getTopScores } from "@/lib/queries";
 
 async function GameDetail({
   params,
@@ -13,8 +13,7 @@ async function GameDetail({
   const game = await getGame(id);
   if (!game) notFound();
 
-  // Temporary mock board; replaced by real scores in step 9.
-  const scores = seededScores(id.length * 17 + 3, 10);
+  const scores = await getTopScores(game.id, 10);
 
   return (
     <div className="av-detail fade-in">
@@ -34,7 +33,7 @@ async function GameDetail({
           <div className="stat-strip">
             <div>
               <div className="l">Partidas</div>
-              <div className="v">{game.plays.toLocaleString("es-ES")}</div>
+              <div className="v">{fmtNumber(game.plays)}</div>
             </div>
             <div>
               <div className="l">Mejor global</div>
@@ -45,7 +44,7 @@ async function GameDetail({
                   textShadow: "0 0 6px rgba(255,0,110,0.5)",
                 }}
               >
-                {game.best === null ? "—" : game.best.toLocaleString("es-ES")}
+                {game.best === null ? "—" : fmtNumber(game.best)}
               </div>
             </div>
             <div>
@@ -75,15 +74,36 @@ async function GameDetail({
       <aside>
         <div className="leaderboard">
           <h3>MEJORES PUNTUACIONES</h3>
+          {scores.length === 0 && (
+            <div
+              style={{
+                padding: "32px 12px",
+                textAlign: "center",
+                color: "var(--ink-faint)",
+              }}
+            >
+              <div
+                className="pixel"
+                style={{
+                  fontSize: 12,
+                  color: "var(--magenta)",
+                  marginBottom: 8,
+                }}
+              >
+                AÚN NO HAY PUNTUACIONES
+              </div>
+              <div>Sé el primero en dejar tu marca.</div>
+            </div>
+          )}
           {scores.map((r, i) => (
             <div
-              key={r.name}
+              key={r.id}
               className={
                 "lb-row" +
                 (i === 0 ? " top1" : i === 1 ? " top2" : i === 2 ? " top3" : "")
               }
             >
-              <div className="rk">#{String(r.rank).padStart(2, "0")}</div>
+              <div className="rk">#{String(i + 1).padStart(2, "0")}</div>
               <div className="pl">
                 {r.name}
                 <div
@@ -93,10 +113,10 @@ async function GameDetail({
                     letterSpacing: "0.1em",
                   }}
                 >
-                  {r.date}
+                  {fmtDate(r.created_at)}
                 </div>
               </div>
-              <div className="sc">{r.score.toLocaleString("es-ES")}</div>
+              <div className="sc">{fmtNumber(r.score)}</div>
             </div>
           ))}
         </div>
