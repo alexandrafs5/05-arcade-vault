@@ -48,7 +48,19 @@ export function createEngine(
   const keys: Keys = {};
   const justPressed: Keys = {};
 
+  const SCROLL_KEYS = [
+    "Space",
+    "ArrowUp",
+    "ArrowDown",
+    "ArrowLeft",
+    "ArrowRight",
+  ];
+
   const onKeyDown = (e: KeyboardEvent) => {
+    // Stop the page from scrolling, but keep typing in form fields (game-over name input).
+    const t = e.target as HTMLElement | null;
+    const typing = !!t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA");
+    if (!typing && SCROLL_KEYS.includes(e.code)) e.preventDefault();
     if (!keys[e.code]) justPressed[e.code] = true;
     keys[e.code] = true;
   };

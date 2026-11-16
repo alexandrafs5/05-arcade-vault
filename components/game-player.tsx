@@ -56,6 +56,20 @@ export function GamePlayer({
     return () => clearInterval(t);
   }, [isRocas, over, paused]);
 
+  // P / Esc toggle pause for the real game (ignored while the modal or a text field has focus).
+  useEffect(() => {
+    if (!isRocas || over) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code !== "KeyP" && e.code !== "Escape") return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
+      e.preventDefault();
+      setPaused((p) => !p);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isRocas, over]);
+
   const restart = () => {
     setScore(0);
     setLives(LIVES);
