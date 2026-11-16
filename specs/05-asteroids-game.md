@@ -1,6 +1,6 @@
 # SPEC 05 — Asteroids game (ROCAS) playable in the platform
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 01
 > **Date:** 2026-11-16
 > **Objective:** Port the vanilla-canvas Asteroids game from `references/started-games/02-asteroids/` into a React canvas component and make it the real player for the existing `rocas` game, inside the current player shell (HUD, pause, game-over modal, score saving).
@@ -97,24 +97,24 @@ Conventions:
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` and `npm run build` finish with no errors.
-- [ ] `/juegos/rocas/jugar` shows an 800×600 canvas with 4 asteroids and a ship at the center, blinking for 3 s.
-- [ ] `←` / `→` rotate the ship, `↑` thrusts, `Space` fires one bullet with a 0.2 s cooldown.
-- [ ] Destroying a size 3 / 2 / 1 asteroid adds exactly 20 / 50 / 100 to the HUD score.
-- [ ] A size 3 or 2 asteroid splits into two asteroids of the next smaller size; a size 1 asteroid does not split.
-- [ ] Hitting an asteroid after invincibility ends removes one life; the HUD shows lives going 3 → 2 → 1 → 0.
-- [ ] Clearing all asteroids raises the HUD level by 1 and spawns `3 + level` asteroids.
-- [ ] After the third death the game-over modal opens with the final score.
-- [ ] Clicking FIN opens the game-over modal with the current score.
-- [ ] GUARDAR PUNTUACIÓN stores `{ game: "rocas", score, name }` in `av_scores` and `/salon` for ROCAS lists it for the local player.
-- [ ] JUGAR DE NUEVO resets score 0, lives 3, level 1, and a fresh asteroid field; no duplicate loops run (speed stays constant after 3 restarts).
-- [ ] PAUSA, `P`, and `Esc` each freeze the canvas (asteroids stop moving); pressing again resumes with no jump in positions.
-- [ ] While the game is mounted, `Space` and arrow keys do not scroll the page.
-- [ ] Canvas shrinks and grows with the viewport while keeping a 4:3 ratio; at 375 px width it fits with no horizontal scroll.
-- [ ] Leaving the page (SALIR, VOLVER AL VAULT, or browser back) stops the loop: no console errors and `window` key listeners are removed.
-- [ ] `/juegos/caida/jugar` (and the other 6 games) still show the mock arena and the mock timer exactly as before.
-- [ ] `/juegos/rocas` detail text no longer mentions UFOs.
-- [ ] No console errors on `/juegos/rocas/jugar` during a full play session.
+- [x] `npm run lint` and `npm run build` finish with no errors.
+- [x] `/juegos/rocas/jugar` shows an 800×600 canvas with 4 asteroids and a ship at the center, blinking for 3 s.
+- [x] `←` / `→` rotate the ship, `↑` thrusts, `Space` fires one bullet with a 0.2 s cooldown.
+- [x] Destroying a size 3 / 2 / 1 asteroid adds exactly 20 / 50 / 100 to the HUD score.
+- [x] A size 3 or 2 asteroid splits into two asteroids of the next smaller size; a size 1 asteroid does not split.
+- [x] Hitting an asteroid after invincibility ends removes one life; the HUD shows lives going 3 → 2 → 1 → 0.
+- [x] Clearing all asteroids raises the HUD level by 1 and spawns `3 + level` asteroids.
+- [x] After the third death the game-over modal opens with the final score.
+- [x] Clicking FIN opens the game-over modal with the current score.
+- [x] GUARDAR PUNTUACIÓN stores `{ game: "rocas", score, name }` in `av_scores` and `/salon` for ROCAS lists it for the local player.
+- [x] JUGAR DE NUEVO resets score 0, lives 3, level 1, and a fresh asteroid field; no duplicate loops run (speed stays constant after 3 restarts).
+- [x] PAUSA, `P`, and `Esc` each freeze the canvas (asteroids stop moving); pressing again resumes with no jump in positions.
+- [x] While the game is mounted, `Space` and arrow keys do not scroll the page.
+- [x] Canvas shrinks and grows with the viewport while keeping a 4:3 ratio; at 375 px width it fits with no horizontal scroll.
+- [x] Leaving the page (SALIR, VOLVER AL VAULT, or browser back) stops the loop: no console errors and `window` key listeners are removed.
+- [x] `/juegos/caida/jugar` (and the other 6 games) still show the mock arena and the mock timer exactly as before.
+- [x] `/juegos/rocas` detail text no longer mentions UFOs.
+- [x] No console errors on `/juegos/rocas/jugar` during a full play session.
 
 ## Decisions
 
