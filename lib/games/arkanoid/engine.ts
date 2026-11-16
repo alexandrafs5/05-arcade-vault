@@ -223,8 +223,44 @@ export const createEngine: CreateEngine = (canvas, cb) => {
   let overReported = false;
   let lastSnap: EngineSnapshot | null = null;
 
-  // Paddle direction from the keyboard (wired in the input step).
-  const inputDir = (): -1 | 0 | 1 => 0;
+  // Keyboard: both keys held cancel out.
+  const keys = { left: false, right: false };
+  const inputDir = (): -1 | 0 | 1 =>
+    keys.left === keys.right ? 0 : keys.left ? -1 : 1;
+
+  function clearInput() {
+    keys.left = false;
+    keys.right = false;
+  }
+
+  function isTyping(e: KeyboardEvent) {
+    const t = e.target;
+    return (
+      t instanceof HTMLElement && ["INPUT", "TEXTAREA"].includes(t.tagName)
+    );
+  }
+
+  function onKeyDown(e: KeyboardEvent) {
+    if (isTyping(e)) return;
+    if (e.code !== "ArrowLeft" && e.code !== "ArrowRight") return;
+    e.preventDefault();
+    if (paused) return;
+    if (e.code === "ArrowLeft") keys.left = true;
+    else keys.right = true;
+  }
+
+  function onKeyUp(e: KeyboardEvent) {
+    if (e.code === "ArrowLeft") keys.left = false;
+    else if (e.code === "ArrowRight") keys.right = false;
+  }
+
+  // Mouse: the canvas is scaled by CSS, so convert to logic pixels.
+  function onMouseMove(e: MouseEvent) {
+    if (paused || game.over) return;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0) return;
+    game.setPaddleCenter(((e.clientX - rect.left) * W) / rect.width);
+  }
 
   // Spritesheet: loaded inside start(), never at module level.
   let sheet: HTMLImageElement | null = null;
@@ -346,6 +382,10 @@ export const createEngine: CreateEngine = (canvas, cb) => {
       if (running) return;
       running = true;
       lastTime = null;
+      window.addEventListener("keydown", onKeyDown);
+      window.addEventListener("keyup", onKeyUp);
+      window.addEventListener("blur", clearInput);
+      canvas.addEventListener("mousemove", onMouseMove);
       loadSheet();
       emitIfChanged();
       rafId = requestAnimationFrame(frame);
@@ -353,6 +393,11 @@ export const createEngine: CreateEngine = (canvas, cb) => {
     stop() {
       running = false;
       cancelAnimationFrame(rafId);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", clearInput);
+      canvas.removeEventListener("mousemove", onMouseMove);
+      clearInput();
       if (sheetStatus === "loading") {
         if (sheet) {
           sheet.onload = null;
@@ -365,6 +410,7 @@ export const createEngine: CreateEngine = (canvas, cb) => {
     setPaused(p) {
       paused = p;
       lastTime = null;
+      clearInput();
     },
     restart() {
       game.reset();
