@@ -1135,12 +1135,16 @@ a {
 }
 
 /* real game canvas: logic size comes from the game definition, CSS scales it.
-   aspect-ratio is set inline; max-height + object-fit keep tall games on screen. */
+   aspect-ratio is set inline. The canvas fills the 4:3 CRT screen by height and is
+   centered, so tall games (Tetris 3:4) show whole and 4:3 games fill the screen. */
 .game-canvas {
+  position: absolute;
+  inset: 0;
   display: block;
-  width: 100%;
-  max-height: 75vh;
-  object-fit: contain;
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  margin: auto;
   background: #000;
 }
 

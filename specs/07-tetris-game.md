@@ -1,6 +1,6 @@
 # SPEC 07 — Tetris game (TETRIS) playable in the platform
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 05, SPEC 06
 > **Date:** 2026-11-16
 > **Objective:** Add TETRIS as a real game with its own engine, catalog row and leaderboard, so players can play it and save scores from `/juegos/tetris/jugar`.
@@ -103,31 +103,31 @@ No UI is designed or created in this spec (the cover is reused), so `/frontend-d
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` and `npm run build` finish with no errors.
-- [ ] `games` has a row `tetris` with title `TETRIS`, the copy above, category `PUZZLE`, cover `cover-tetro`, color `magenta` and `sort_order` 2.
-- [ ] `/juegos/tetris/jugar` shows a 450×600 canvas; the game starts with an empty 10×20 board, one falling piece, a next-piece preview in the side strip, and HUD score 0, lines 0, level 01.
-- [ ] `←` / `→` move the piece one column and stop at walls and blocks; holding them repeats after 170 ms every 50 ms.
-- [ ] `↑` and `X` rotate clockwise once per press; a rotation that collides tries kicks `0, −1, +1, −2, +2` and is ignored if all collide.
-- [ ] `↓` drops one row and adds exactly 1 point per row; on a blocked piece it locks it.
-- [ ] `Space` drops the piece to the ghost position and adds exactly 2 points per row dropped, then locks.
-- [ ] The ghost piece shows the landing position at alpha 0.2.
-- [ ] Clearing 1 / 2 / 3 / 4 lines at once adds exactly 100 / 300 / 500 / 800 times the current level to the score.
-- [ ] HUD lines equals total cleared lines; HUD level equals `floor(lines / 10) + 1`.
-- [ ] Gravity interval is 1000 ms at level 1, 910 ms at level 2, and never below 100 ms.
-- [ ] The N piece (3×3 ring, gray) appears in the random sequence.
-- [ ] A new piece that collides on spawn opens the game-over modal with the final score once.
-- [ ] FIN opens the game-over modal with the current score.
-- [ ] GUARDAR PUNTUACIÓN inserts one row in `scores` with `game_id = 'tetris'`, the typed name and the final score (check with `execute_sql`).
-- [ ] The saved score shows on `/salon?game=tetris`, on `/juegos/tetris` (top 10), and in the home "recent" list after a reload.
-- [ ] The card and `/juegos/tetris` show `best` and `plays` equal to `max(score)` and `count(*)` for the game.
-- [ ] PAUSA, `P` and `Esc` freeze the canvas (no gravity, no input); pressing again resumes with no piece jump.
-- [ ] While the game is mounted, `Space` and the arrow keys do not scroll the page.
-- [ ] The canvas scales with the viewport; at 375 px width it fits with no horizontal scroll.
-- [ ] JUGAR DE NUEVO resets the HUD, board and score; no duplicate loops run (fall speed stays constant after 3 restarts).
-- [ ] Leaving the page stops the loop: no console errors and window listeners are removed.
-- [ ] `/salon` and `/biblioteca` list both ASTEROIDS and TETRIS; `/salon` has two tabs.
-- [ ] `/juegos/asteroids/jugar` still plays exactly as before.
-- [ ] No console errors on `/juegos/tetris/jugar` during a full session.
+- [x] `npm run lint` and `npm run build` finish with no errors.
+- [x] `games` has a row `tetris` with title `TETRIS`, the copy above, category `PUZZLE`, cover `cover-tetro`, color `magenta` and `sort_order` 2.
+- [x] `/juegos/tetris/jugar` shows a 450×600 canvas; the game starts with an empty 10×20 board, one falling piece, a next-piece preview in the side strip, and HUD score 0, lines 0, level 01.
+- [x] `←` / `→` move the piece one column and stop at walls and blocks; holding them repeats after 170 ms every 50 ms.
+- [x] `↑` and `X` rotate clockwise once per press; a rotation that collides tries kicks `0, −1, +1, −2, +2` and is ignored if all collide.
+- [x] `↓` drops one row and adds exactly 1 point per row; on a blocked piece it locks it.
+- [x] `Space` drops the piece to the ghost position and adds exactly 2 points per row dropped, then locks.
+- [x] The ghost piece shows the landing position at alpha 0.2.
+- [x] Clearing 1 / 2 / 3 / 4 lines at once adds exactly 100 / 300 / 500 / 800 times the current level to the score.
+- [x] HUD lines equals total cleared lines; HUD level equals `floor(lines / 10) + 1`.
+- [x] Gravity interval is 1000 ms at level 1, 910 ms at level 2, and never below 100 ms.
+- [x] The N piece (3×3 ring, gray) appears in the random sequence.
+- [x] A new piece that collides on spawn opens the game-over modal with the final score once.
+- [x] FIN opens the game-over modal with the current score.
+- [x] GUARDAR PUNTUACIÓN inserts one row in `scores` with `game_id = 'tetris'`, the typed name and the final score (check with `execute_sql`).
+- [x] The saved score shows on `/salon?game=tetris`, on `/juegos/tetris` (top 10), and in the home "recent" list after a reload.
+- [x] The card and `/juegos/tetris` show `best` and `plays` equal to `max(score)` and `count(*)` for the game.
+- [x] PAUSA, `P` and `Esc` freeze the canvas (no gravity, no input); pressing again resumes with no piece jump.
+- [x] While the game is mounted, `Space` and the arrow keys do not scroll the page.
+- [x] The canvas scales with the viewport; at 375 px width it fits with no horizontal scroll.
+- [x] JUGAR DE NUEVO resets the HUD, board and score; no duplicate loops run (fall speed stays constant after 3 restarts).
+- [x] Leaving the page stops the loop: no console errors and window listeners are removed.
+- [x] `/salon` and `/biblioteca` list both ASTEROIDS and TETRIS; `/salon` has two tabs.
+- [x] `/juegos/asteroids/jugar` still plays exactly as before.
+- [x] No console errors on `/juegos/tetris/jugar` during a full session.
 
 ## Decisions
 
