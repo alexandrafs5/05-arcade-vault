@@ -4,6 +4,7 @@ import {
   DIRS,
   FIRST_APPLE,
   H,
+  KEY_TO_DIR,
   MAX_QUEUED_TURNS,
   OPPOSITE,
   ROWS,
@@ -165,14 +166,49 @@ export const createEngine: CreateEngine = (canvas, cb) => {
     }
   }
 
+  let paused = false;
+  let running = false;
+
+  function isTyping(e: KeyboardEvent) {
+    const t = e.target;
+    return (
+      t instanceof HTMLElement && ["INPUT", "TEXTAREA"].includes(t.tagName)
+    );
+  }
+
+  function onKeyDown(e: KeyboardEvent) {
+    if (isTyping(e) || e.ctrlKey || e.metaKey || e.altKey) return;
+    const d = KEY_TO_DIR[e.key.toLowerCase()];
+    if (!d) return;
+    if (e.key.startsWith("Arrow")) e.preventDefault(); // no page scroll
+    if (paused) return;
+    game.turn(d);
+  }
+
+  function clearInput() {
+    game.clearTurns();
+  }
+
   game.reset();
 
   return {
     start() {
+      if (running) return;
+      running = true;
+      window.addEventListener("keydown", onKeyDown);
+      window.addEventListener("blur", clearInput);
       emitIfChanged();
     },
-    stop() {},
-    setPaused() {},
+    stop() {
+      running = false;
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("blur", clearInput);
+      clearInput();
+    },
+    setPaused(p) {
+      paused = p;
+      clearInput();
+    },
     restart() {
       game.reset();
       overReported = false;
