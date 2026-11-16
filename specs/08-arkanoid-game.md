@@ -1,6 +1,6 @@
 # SPEC 08 — Arkanoid game (ARKANOID) playable in the platform
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 05, SPEC 06
 > **Date:** 2026-11-16
 > **Objective:** Add ARKANOID as a real game with its own engine, catalog row and leaderboard, so players can play it and save scores from `/juegos/arkanoid/jugar`.
@@ -120,34 +120,34 @@ No UI is designed or created in this spec (the cover is reused and the shell is 
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` and `npm run build` finish with no errors.
-- [ ] `games` has a row `arkanoid` with title `ARKANOID`, the copy above, category `ARCADE`, cover `cover-bricks`, color `cyan` and `sort_order` 3.
-- [ ] `/juegos/arkanoid/jugar` shows an 800×600 canvas; the game starts with the level 1 grid (10×6 blocks, 60 total), the paddle centered at `y = 560`, the ball launching from the paddle, and HUD score 0, lives 3, level 01.
-- [ ] `←` / `→` move the paddle at 400 px/s and it stops at both walls; holding both keys does not jump.
-- [ ] Moving the mouse over the canvas centers the paddle on the pointer, clamped to the walls, also when the canvas is scaled by CSS (checked at two viewport widths).
-- [ ] Mouse movement while paused does not move the paddle.
-- [ ] The ball bounces on left, right and top walls; it bounces on the paddle only when falling onto it; `vx` is unchanged by the paddle.
-- [ ] Hitting a block removes it, reverses `vy`, adds exactly 10 points to the score and plays a 4-frame explosion of about 150 ms.
-- [ ] At most one block is removed per frame.
-- [ ] Ball speed is `(200, −300) × speed` with speed 1.00, 1.10, 1.21, 1.33, 1.46 for levels 1 to 5.
-- [ ] Clearing all blocks loads the next level with its pattern (full grid, pyramid, checkerboard, rows with gaps, frame + cross), HUD level +1, the score and lives kept, and the ball back on the paddle.
-- [ ] Block counts per level are 60, 40, 30, 39 and 39 (levels 1 to 5).
-- [ ] Letting the ball fall below `y = 600` reduces HUD lives by 1 and puts the ball back on the paddle with the current level speed; the score and blocks are unchanged.
-- [ ] Losing the third life opens the game-over modal with the final score once.
-- [ ] Clearing level 5 opens the game-over modal with the final score once; no bonus points are added.
-- [ ] FIN opens the game-over modal with the current score.
-- [ ] GUARDAR PUNTUACIÓN inserts one row in `scores` with `game_id = 'arkanoid'`, the typed name and the final score (check with `execute_sql`).
-- [ ] The saved score shows on `/salon?game=arkanoid`, on `/juegos/arkanoid` (top 10), and in the home "recent" list after a reload.
-- [ ] The card and `/juegos/arkanoid` show `best` and `plays` equal to `max(score)` and `count(*)` for the game.
-- [ ] `/salon` and `/biblioteca` list ASTEROIDS, TETRIS and ARKANOID; `/salon` has three tabs.
-- [ ] PAUSA, `P` and `Esc` freeze the canvas (ball, blocks, explosions and paddle stop); pressing again resumes with no jump.
-- [ ] While the game is mounted, `←` and `→` do not scroll the page.
-- [ ] The canvas scales with the viewport; at 375 px width it fits with no horizontal scroll.
-- [ ] JUGAR DE NUEVO resets the HUD, blocks, level, lives and score; no duplicate loops run (ball speed stays constant after 3 restarts).
-- [ ] Blocking `/games/arkanoid/spritesheet-breakout.png` makes the game draw flat colored rectangles, stay playable and log one `console.error`.
-- [ ] Leaving the page stops the loop: no console errors and window and canvas listeners are removed.
-- [ ] `/juegos/asteroids/jugar` and `/juegos/tetris/jugar` still play exactly as before.
-- [ ] No console errors on `/juegos/arkanoid/jugar` during a full session.
+- [x] `npm run lint` and `npm run build` finish with no errors.
+- [x] `games` has a row `arkanoid` with title `ARKANOID`, the copy above, category `ARCADE`, cover `cover-bricks`, color `cyan` and `sort_order` 3.
+- [x] `/juegos/arkanoid/jugar` shows an 800×600 canvas; the game starts with the level 1 grid (10×6 blocks, 60 total), the paddle centered at `y = 560`, the ball launching from the paddle, and HUD score 0, lives 3, level 01.
+- [x] `←` / `→` move the paddle at 400 px/s and it stops at both walls; holding both keys does not jump.
+- [x] Moving the mouse over the canvas centers the paddle on the pointer, clamped to the walls, also when the canvas is scaled by CSS (checked at two viewport widths).
+- [x] Mouse movement while paused does not move the paddle.
+- [x] The ball bounces on left, right and top walls; it bounces on the paddle only when falling onto it; `vx` is unchanged by the paddle.
+- [x] Hitting a block removes it, reverses `vy`, adds exactly 10 points to the score and plays a 4-frame explosion of about 150 ms.
+- [x] At most one block is removed per frame.
+- [x] Ball speed is `(200, −300) × speed` with speed 1.00, 1.10, 1.21, 1.33, 1.46 for levels 1 to 5.
+- [x] Clearing all blocks loads the next level with its pattern (full grid, pyramid, checkerboard, rows with gaps, frame + cross), HUD level +1, the score and lives kept, and the ball back on the paddle.
+- [x] Block counts per level are 60, 40, 30, 39 and 39 (levels 1 to 5).
+- [x] Letting the ball fall below `y = 600` reduces HUD lives by 1 and puts the ball back on the paddle with the current level speed; the score and blocks are unchanged.
+- [x] Losing the third life opens the game-over modal with the final score once.
+- [x] Clearing level 5 opens the game-over modal with the final score once; no bonus points are added.
+- [x] FIN opens the game-over modal with the current score.
+- [x] GUARDAR PUNTUACIÓN inserts one row in `scores` with `game_id = 'arkanoid'`, the typed name and the final score (check with `execute_sql`).
+- [x] The saved score shows on `/salon?game=arkanoid`, on `/juegos/arkanoid` (top 10), and in the home "recent" list after a reload.
+- [x] The card and `/juegos/arkanoid` show `best` and `plays` equal to `max(score)` and `count(*)` for the game.
+- [x] `/salon` and `/biblioteca` list ASTEROIDS, TETRIS and ARKANOID; `/salon` has three tabs.
+- [x] PAUSA, `P` and `Esc` freeze the canvas (ball, blocks, explosions and paddle stop); pressing again resumes with no jump.
+- [x] While the game is mounted, `←` and `→` do not scroll the page.
+- [x] The canvas scales with the viewport; at 375 px width it fits with no horizontal scroll.
+- [x] JUGAR DE NUEVO resets the HUD, blocks, level, lives and score; no duplicate loops run (ball speed stays constant after 3 restarts).
+- [x] Blocking `/games/arkanoid/spritesheet-breakout.png` makes the game draw flat colored rectangles, stay playable and log one `console.error`.
+- [x] Leaving the page stops the loop: no console errors and window and canvas listeners are removed.
+- [x] `/juegos/asteroids/jugar` and `/juegos/tetris/jugar` still play exactly as before.
+- [x] No console errors on `/juegos/arkanoid/jugar` during a full session.
 
 ## Decisions
 
