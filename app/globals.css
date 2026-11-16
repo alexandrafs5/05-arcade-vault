@@ -800,10 +800,10 @@ a {
   filter: drop-shadow(0 0 6px rgba(0, 255, 136, 0.6));
 }
 
-.cover-rocas {
+.cover-asteroids {
   background: radial-gradient(circle at 50% 50%, #0a0a30, #000);
 }
-.cover-rocas::after {
+.cover-asteroids::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -815,7 +815,7 @@ a {
     radial-gradient(circle at 12% 70%, var(--cyan) 0 2px, transparent 3px),
     radial-gradient(circle at 60% 20%, var(--cyan) 0 2px, transparent 3px);
 }
-.cover-rocas::before {
+.cover-asteroids::before {
   content: "▲";
   position: absolute;
   left: 48%;
@@ -1134,11 +1134,13 @@ a {
   box-shadow: 0 0 6px var(--green);
 }
 
-/* real game canvas (rocas): logic size stays 800x600, CSS scales it */
-.asteroids-canvas {
+/* real game canvas: logic size comes from the game definition, CSS scales it.
+   aspect-ratio is set inline; max-height + object-fit keep tall games on screen. */
+.game-canvas {
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  max-height: 75vh;
+  object-fit: contain;
   background: #000;
 }
 

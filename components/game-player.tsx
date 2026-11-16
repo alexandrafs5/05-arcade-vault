@@ -2,16 +2,51 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AsteroidsCanvas } from "@/components/asteroids-canvas";
-import type { EngineSnapshot } from "@/lib/games/asteroids/engine";
+import { GameCanvas } from "@/components/game-canvas";
+import { fmtNumber } from "@/lib/format";
+import { getGameDefinition } from "@/lib/games/registry";
+import type {
+  EngineSnapshot,
+  GameDefinition,
+  HudField,
+} from "@/lib/games/types";
 import { useSession } from "@/lib/session";
 
-const LIVES = 3;
+function formatHud(f: HudField, n: number) {
+  if (f.format === "hearts") return n > 0 ? "♥ ".repeat(n).trim() : "—";
+  if (f.format === "pad2") return String(n).padStart(2, "0");
+  return fmtNumber(n);
+}
+
+const initialHud = (d: GameDefinition) =>
+  Object.fromEntries(d.hud.map((f) => [f.key, f.initial]));
 
 export function GamePlayer({
   gameId,
   title,
 }: {
+  gameId: string;
+  title: string;
+}) {
+  const definition = getGameDefinition(gameId);
+  if (!definition) {
+    return (
+      <div className="av-player fade-in">
+        <div className="pixel neon-magenta" style={{ fontSize: 18 }}>
+          JUEGO NO DISPONIBLE
+        </div>
+      </div>
+    );
+  }
+  return <Player definition={definition} gameId={gameId} title={title} />;
+}
+
+function Player({
+  definition,
+  gameId,
+  title,
+}: {
+  definition: GameDefinition;
   gameId: string;
   title: string;
 }) {
@@ -24,8 +59,9 @@ export function GamePlayer({
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
-  const [lives, setLives] = useState(LIVES);
-  const [level, setLevel] = useState(1);
+  const [hud, setHud] = useState<Record<string, number>>(() =>
+    initialHud(definition),
+  );
   const [restartKey, setRestartKey] = useState(0);
 
   // The session loads after mount, so the name follows it until the player edits it.
@@ -34,8 +70,7 @@ export function GamePlayer({
 
   const handleEngineChange = (s: EngineSnapshot) => {
     setScore(s.score);
-    setLives(s.lives);
-    setLevel(s.level);
+    setHud(s.hud);
   };
 
   const handleEngineGameOver = (finalScore: number) => {
@@ -72,8 +107,7 @@ export function GamePlayer({
 
   const restart = () => {
     setScore(0);
-    setLives(LIVES);
-    setLevel(1);
+    setHud(initialHud(definition));
     setRestartKey((k) => k + 1);
     setPaused(false);
     setOver(false);
@@ -93,18 +127,21 @@ export function GamePlayer({
           </div>
           <div className="hud-stat">
             <div className="l">Puntuación</div>
-            <div className="v">{score.toLocaleString("es-ES")}</div>
+            <div className="v">{fmtNumber(score)}</div>
           </div>
-          <div className="hud-stat lives">
-            <div className="l">Vidas</div>
-            <div className="v">
-              {lives > 0 ? "♥ ".repeat(lives).trim() : "—"}
+          {definition.hud.map((f) => (
+            <div
+              key={f.key}
+              className={
+                "hud-stat" +
+                (f.format === "hearts" ? " lives" : "") +
+                (f.key === "level" ? " level" : "")
+              }
+            >
+              <div className="l">{f.label}</div>
+              <div className="v">{formatHud(f, hud[f.key] ?? f.initial)}</div>
             </div>
-          </div>
-          <div className="hud-stat level">
-            <div className="l">Nivel</div>
-            <div className="v">{String(level).padStart(2, "0")}</div>
-          </div>
+          ))}
         </div>
         <div className="hud-actions">
           <button className="btn yellow" onClick={() => setPaused((p) => !p)}>
@@ -124,7 +161,8 @@ export function GamePlayer({
 
       <div className="crt">
         <div className="crt-screen">
-          <AsteroidsCanvas
+          <GameCanvas
+            definition={definition}
             paused={paused || over}
             restartKey={restartKey}
             onChange={handleEngineChange}
@@ -166,7 +204,7 @@ export function GamePlayer({
           <div className="modal">
             <h2>FIN DEL JUEGO</h2>
             <div className="final-label">PUNTUACIÓN FINAL</div>
-            <div className="final">{score.toLocaleString("es-ES")}</div>
+            <div className="final">{fmtNumber(score)}</div>
             {!saved ? (
               <div className="input-row">
                 <input

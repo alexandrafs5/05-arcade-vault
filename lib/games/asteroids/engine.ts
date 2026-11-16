@@ -15,31 +15,9 @@ import {
   type Keys,
 } from "./entities";
 
-export type EngineState = "playing" | "dead" | "gameover";
+import type { CreateEngine, EngineSnapshot, EngineState } from "../types";
 
-export type EngineSnapshot = {
-  score: number;
-  lives: number;
-  level: number;
-  state: EngineState;
-};
-
-export type EngineCallbacks = {
-  onChange: (s: EngineSnapshot) => void; // fired only when a snapshot field changes
-  onGameOver: (finalScore: number) => void;
-};
-
-export type Engine = {
-  start: () => void; // begin the rAF loop
-  stop: () => void; // cancel the loop and remove window listeners
-  setPaused: (paused: boolean) => void;
-  restart: () => void; // initGame(): score 0, lives 3, level 1
-};
-
-export function createEngine(
-  canvas: HTMLCanvasElement,
-  cb: EngineCallbacks,
-): Engine {
+export const createEngine: CreateEngine = (canvas, cb) => {
   const ctx = canvas.getContext("2d")!;
   canvas.width = W;
   canvas.height = H;
@@ -102,12 +80,12 @@ export function createEngine(
     if (
       lastSnap &&
       lastSnap.score === score &&
-      lastSnap.lives === lives &&
-      lastSnap.level === level &&
+      lastSnap.hud.lives === lives &&
+      lastSnap.hud.level === level &&
       lastSnap.state === state
     )
       return;
-    lastSnap = { score, lives, level, state };
+    lastSnap = { score, state, hud: { lives, level } };
     cb.onChange(lastSnap);
   }
 
@@ -313,7 +291,7 @@ export function createEngine(
       lastTime = null;
     },
     restart() {
-      initGame();
+      initGame(); // score 0, lives 3, level 1
     },
   };
-}
+};
