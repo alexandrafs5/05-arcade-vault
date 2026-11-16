@@ -2,9 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useRef } from "react";
-import type { Game } from "@/lib/data";
+import type { GameWithStats } from "@/lib/queries";
 
-export function GameCard({ game }: { game: Game }) {
+export function GameCard({ game }: { game: GameWithStats }) {
   const router = useRouter();
   const tiltRef = useRef<HTMLDivElement>(null);
   const open = () => router.push(`/juegos/${game.id}`);
@@ -21,10 +21,21 @@ export function GameCard({ game }: { game: Game }) {
     if (tiltRef.current) tiltRef.current.style.transform = "";
   };
 
-  const btnColor = game.color === "magenta" ? "magenta" : game.color === "yellow" ? "yellow" : "";
+  const btnColor =
+    game.color === "magenta"
+      ? "magenta"
+      : game.color === "yellow"
+        ? "yellow"
+        : "";
 
   return (
-    <div ref={tiltRef} className="card" onMouseMove={onMove} onMouseLeave={onLeave} onClick={open}>
+    <div
+      ref={tiltRef}
+      className="card"
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      onClick={open}
+    >
       <div className="cover">
         <div className={"cover-bg " + game.cover}></div>
         <div className="label">{game.cat}</div>
@@ -35,7 +46,9 @@ export function GameCard({ game }: { game: Game }) {
         <div className="row">
           <div className="score-badge">
             <span>MEJOR PUNTUACIÓN</span>
-            <b>{game.best.toLocaleString("es-ES")}</b>
+            <b>
+              {game.best === null ? "—" : game.best.toLocaleString("es-ES")}
+            </b>
           </div>
           <button
             className={"btn " + btnColor}

@@ -1,5 +1,10 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
-import { Courier_Prime, JetBrains_Mono, Press_Start_2P } from "next/font/google";
+import {
+  Courier_Prime,
+  JetBrains_Mono,
+  Press_Start_2P,
+} from "next/font/google";
 import { Footer } from "@/components/footer";
 import { Nav } from "@/components/nav";
 import { SessionProvider } from "@/lib/session";
@@ -25,7 +30,8 @@ const courierPrime = Courier_Prime({
 
 export const metadata: Metadata = {
   title: "Arcade Vault",
-  description: "Online games platform where players compete for the highest score.",
+  description:
+    "Online games platform where players compete for the highest score.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -39,7 +45,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <div className="av-noise" aria-hidden="true" />
         <SessionProvider>
           <div className="av-root">
-            <Nav />
+            {/* Nav reads usePathname(), which is request-time data on routes with runtime params. */}
+            <Suspense fallback={<nav className="av-nav" />}>
+              <Nav />
+            </Suspense>
             <main className="av-main">{children}</main>
             <Footer />
           </div>
