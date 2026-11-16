@@ -1,6 +1,6 @@
 # SPEC 09 — Snake game (SNAKE) playable in the platform
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 05, SPEC 06, SPEC 08
 > **Date:** 2026-11-16
 > **Objective:** Add SNAKE as a real game with its own engine, catalog row and leaderboard, so players can play it and save scores from `/juegos/snake/jugar`.
@@ -114,31 +114,31 @@ No UI is designed or created in this spec (the cover is reused and the shell is 
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` and `npm run build` finish with no errors.
-- [ ] `games` has a row `snake` with title `SNAKE`, the copy above, category `ARCADE`, cover `cover-snake`, color `green` and `sort_order` 4.
-- [ ] `/juegos/snake/jugar` shows a 612×540 canvas; the game starts with a 3-cell snake (head col 5, row 7, facing right), the apple at col 12, row 7, and HUD score 0 and length 3.
-- [ ] The snake does not move until the first valid direction key is pressed.
-- [ ] `←` `↑` `→` `↓` and `A` `W` `D` `S` turn the snake; the snake moves one cell every 130 ms.
-- [ ] A 180° reversal is ignored, also at start (left while facing right).
-- [ ] Two quick perpendicular key presses inside one step both apply, on consecutive steps.
-- [ ] The apple is drawn from the sprite rectangle `x: 34, y: 136, w: 110, h: 160` and shows a red apple, not a banana or an orange.
-- [ ] Eating the apple adds exactly 1 to the score and 1 to the HUD length, and spawns a new apple in a cell the snake does not occupy.
-- [ ] Leaving the board through any of the four walls opens the game-over modal with the final score once.
-- [ ] Running into the snake's own body opens the game-over modal once; moving into the cell the tail leaves in the same step does not.
-- [ ] Filling all 255 cells opens the game-over modal with the final score once; no bonus points are added.
-- [ ] FIN opens the game-over modal with the current score.
-- [ ] GUARDAR PUNTUACIÓN inserts one row in `scores` with `game_id = 'snake'`, the typed name and the final score (check with `execute_sql`).
-- [ ] The saved score shows on `/salon?game=snake`, on `/juegos/snake` (top 10), and in the home "recent" list after a reload.
-- [ ] The card and `/juegos/snake` show `best` and `plays` equal to `max(score)` and `count(*)` for the game.
-- [ ] `/salon` and `/biblioteca` list ASTEROIDS, TETRIS, ARKANOID and SNAKE; `/salon` has four tabs.
-- [ ] PAUSA, `P` and `Esc` freeze the canvas; pressing again resumes with no jump (the snake does not advance an extra cell).
-- [ ] While the game is mounted, the arrow keys do not scroll the page; typing in an `INPUT` is not blocked.
-- [ ] The canvas scales with the viewport; at 375 px width it fits with no horizontal scroll.
-- [ ] JUGAR DE NUEVO resets the HUD, snake, apple and score; no duplicate loops run (step rate stays 130 ms after 3 restarts).
-- [ ] Blocking `/games/snake/fruits.png` makes the game draw a flat red circle as the apple, stay playable and log one `console.error`.
-- [ ] Leaving the page stops the loop: no console errors and window listeners are removed.
-- [ ] `/juegos/asteroids/jugar`, `/juegos/tetris/jugar` and `/juegos/arkanoid/jugar` still play exactly as before.
-- [ ] No console errors on `/juegos/snake/jugar` during a full session.
+- [x] `npm run lint` and `npm run build` finish with no errors.
+- [x] `games` has a row `snake` with title `SNAKE`, the copy above, category `ARCADE`, cover `cover-snake`, color `green` and `sort_order` 4.
+- [x] `/juegos/snake/jugar` shows a 612×540 canvas; the game starts with a 3-cell snake (head col 5, row 7, facing right), the apple at col 12, row 7, and HUD score 0 and length 3.
+- [x] The snake does not move until the first valid direction key is pressed.
+- [x] `←` `↑` `→` `↓` and `A` `W` `D` `S` turn the snake; the snake moves one cell every 130 ms.
+- [x] A 180° reversal is ignored, also at start (left while facing right).
+- [x] Two quick perpendicular key presses inside one step both apply, on consecutive steps.
+- [x] The apple is drawn from the sprite rectangle `x: 34, y: 136, w: 110, h: 160` and shows a red apple, not a banana or an orange.
+- [x] Eating the apple adds exactly 1 to the score and 1 to the HUD length, and spawns a new apple in a cell the snake does not occupy.
+- [x] Leaving the board through any of the four walls opens the game-over modal with the final score once.
+- [x] Running into the snake's own body opens the game-over modal once; moving into the cell the tail leaves in the same step does not.
+- [x] Filling all 255 cells opens the game-over modal with the final score once; no bonus points are added.
+- [x] FIN opens the game-over modal with the current score.
+- [x] GUARDAR PUNTUACIÓN inserts one row in `scores` with `game_id = 'snake'`, the typed name and the final score (check with `execute_sql`).
+- [x] The saved score shows on `/salon?game=snake`, on `/juegos/snake` (top 10), and in the home "recent" list after a reload.
+- [x] The card and `/juegos/snake` show `best` and `plays` equal to `max(score)` and `count(*)` for the game.
+- [x] `/salon` and `/biblioteca` list ASTEROIDS, TETRIS, ARKANOID and SNAKE; `/salon` has four tabs.
+- [x] PAUSA, `P` and `Esc` freeze the canvas; pressing again resumes with no jump (the snake does not advance an extra cell).
+- [x] While the game is mounted, the arrow keys do not scroll the page; typing in an `INPUT` is not blocked.
+- [x] The canvas scales with the viewport; at 375 px width it fits with no horizontal scroll.
+- [x] JUGAR DE NUEVO resets the HUD, snake, apple and score; no duplicate loops run (step rate stays 130 ms after 3 restarts).
+- [x] Blocking `/games/snake/fruits.png` makes the game draw a flat red circle as the apple, stay playable and log one `console.error`.
+- [x] Leaving the page stops the loop: no console errors and window listeners are removed.
+- [x] `/juegos/asteroids/jugar`, `/juegos/tetris/jugar` and `/juegos/arkanoid/jugar` still play exactly as before.
+- [x] No console errors on `/juegos/snake/jugar` during a full session.
 
 ## Decisions
 
