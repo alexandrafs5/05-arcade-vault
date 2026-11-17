@@ -4,25 +4,62 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Arcade Vault: online games platform where players compete for the highest score (README is in Spanish). Early stage — `app/` is still the Create Next App scaffold. README says the project follows Spec Driven Design (`/spec` and `/spec-impl` workflow) using skills from `Klerith/fernando-skills` (`npx skills@latest add Klerith/fernando-skills`).
+Arcade Vault: online games platform where players compete for the highest score. The UI copy and the README are in Spanish; code, comments, specs and commits are in English. Four games are playable today (`asteroids`, `tetris`, `arkanoid`, `snake`), each with a real leaderboard in Supabase. Auth is still mock.
+
+The project follows Spec Driven Design: every feature starts as a spec in `specs/NN-<slug>.md` (01–09 so far, all `Implemented`) and is then implemented step by step.
 
 ## Commands
 
 - `npm run dev` — dev server (http://localhost:3000)
 - `npm run build` / `npm start` — production build / serve
 - `npm run lint` — ESLint (flat config, `eslint-config-next` core-web-vitals + typescript)
-- No test runner configured.
+- No test runner configured. Verify changes in the browser (Playwright MCP is available).
 
-## Skills
+## Workflow and skills
 
-Always use /frontend-design to design user interface.
+- `/spec` writes a spec (questions first, then the file, status `Draft`); `/spec-impl NN-<slug>` implements it on a `spec-NN-<slug>` branch, one commit per plan step, merged through a pull request. `specs/.spec-config.yml` sets `AutoCreateBranch: true` (branch is created without asking). Both skills come from `Klerith/fernando-skills` (`npx skills@latest add Klerith/fernando-skills`).
+- `/new-game` (project skill, `.claude/skills/new-game/`, user-invoked only) is `/spec` specialised for adding a playable game: it ports a folder from `references/started-games/` or designs a game from scratch, and saves `specs/NN-<id>-game.md`. It never writes code; run `/spec-impl` afterwards.
+- Always use `/frontend-design` to design user interface.
+- `/worktree` creates an isolated git worktree in `.trees/<name>` for parallel work.
+- MCP: `supabase` (project-scoped in `.mcp.json`; use it for migrations, SQL and type generation) and `playwright` (browser checks; its logs in `.playwright-mcp/` are gitignored).
+
+## Layout
+
+- `app/` — routes (Spanish slugs): `/` (home landing), `/biblioteca` (game catalog), `/juegos/[id]` (game detail + leaderboard), `/juegos/[id]/jugar` (player), `/salon` (hall of fame), `/acceso` (mock login), `/acerca` (about + contact form). All styles are in `app/globals.css` (`av-*` classes, `.cover-*` game covers, `.game-canvas`).
+- `components/` — shared UI (`nav`, `footer`, `game-card`, `library`, `hall-of-fame`, `game-player`, `game-canvas`, `auth-form`, `contact-form`, ...).
+- `lib/` — `queries.ts` (Supabase reads), `session.tsx` (mock user + `saveScore`), `format.ts` (display helpers), `data.ts` (static Spanish copy only: categories, features, FAQ), `games/` (engines + registry), `supabase/` (client factories + generated types).
+- `supabase/migrations/` — schema and catalog rows. Never edit an applied migration; add a new file.
+- `references/` — read-only source material, not part of the app: `templates/` (original HTML/JSX design), `started-games/` (vanilla JS games to port), `source-assets/`.
 
 ## Stack / gotchas
 
-- Next.js 16.4.2, React 19.3, Tailwind v4 (via `@tailwindcss/turbopack` loader rule in `next.config.ts`), TypeScript. App Router only (`app/`); path alias `@/*` → repo root.
-- AGENTS.md warns this Next.js version has breaking changes vs. training data: read the relevant guide in `node_modules/next/dist/docs/` (`01-app`, `03-architecture`, etc.) before writing Next code.
-- `next.config.ts` enables `cacheComponents`, `partialPrefetching`, and `experimental.agentFeedback` — caching/prefetch behavior differs from classic Next; check the docs before using data fetching or caching APIs.
-- Supabase client factories: `createClient()` in `lib/supabase/client.ts` (browser, used only by `saveScore`) and `lib/supabase/server.ts` (async, cookie-aware; call inside a Server Action, Route Handler, or `<Suspense>` because `cookies()` is request-time). Both are typed with `Database` from `lib/supabase/database.types.ts` (regenerate with the Supabase MCP `generate_typescript_types` after schema changes). Env vars `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (names in `.env.example`). Auth is still mock (`av_user` in `localStorage`); no `proxy.ts` yet.
-- Data (SPEC 06): tables `games` (catalog, `id` is the URL slug, `asteroids` (sort 1), `tetris` (sort 2, SPEC 07), `arkanoid` (sort 3, SPEC 08) and `snake` (sort 4, SPEC 09) today) and `scores` (`game_id`, `name` 1–12 chars, `score` 0–10,000,000), plus view `game_stats` (`best`, `plays` per game). RLS: public read; anyone can insert scores; no update/delete. Migrations live in `supabase/migrations/`. Server-side reads go through `lib/queries.ts` (`getGames`, `getGame`, `getTopScores`, `getRecentScores`, `getGameStats`, `getHomeStats`), always inside `<Suspense>`, no caching (fresh on every request). Display helpers are in `lib/format.ts`. Scores are saved with `saveScore` in `lib/session.tsx` (async insert, throws on failure); `av_scores` no longer exists. Games, scores, and stats are never mock: do not add fake data.
-- Game engine pattern (SPEC 05): real games live in `lib/games/<name>/` as a framework-free engine exposing `createEngine(canvas, { onChange, onGameOver })` → `{ start, stop, setPaused, restart }`; state stays in the closure, `onChange` fires only on snapshot changes (not per frame). Extra canvases from a reference game (e.g. Tetris "next piece") are drawn inside the single game canvas (`tetris` is 450×600 with a side strip), so the shell stays unchanged. Engines that need image assets keep them in `public/games/<id>/` and load them inside `start()` (never at module level; ignore late `onload` after `stop()`), as `arkanoid` does with its spritesheet and `snake` with its apple sprite (`fruits.png`). Engines that read the mouse convert pointer coordinates with `getBoundingClientRect` and the logic size. Shared types (`Engine`, `EngineSnapshot` = `{ score, state, hud }`, `GameDefinition`) live in `lib/games/types.ts`; every playable game is registered in `lib/games/registry.ts` (`getGameDefinition(id)`, keyed by `games.id`) with its logic canvas size and HUD fields. `components/game-canvas.tsx` mounts any registered engine in `useEffect` and calls `stop()` on cleanup; `components/game-player.tsx` looks the game up in the registry and renders the HUD from `definition.hud`; there is no mock arena. A new game needs its own engine, a registry entry, its own `games` row (new migration), and its own spec: create it with `/new-game` (`.claude/skills/new-game/`), then implement with `/spec-impl`.
+- Next.js 16.4.6, React 19.3, Tailwind v4 (via `@tailwindcss/turbopack` loader rule in `next.config.ts`), TypeScript. App Router only (`app/`); path alias `@/*` → repo root.
+- AGENTS.md warns this Next.js version has breaking changes vs. training data: read the relevant guide in `node_modules/next/dist/docs/` (`01-app`, `03-architecture`, etc.) before writing Next code. The AGENTS.md block is regenerated by `next dev`; commit it instead of removing it.
+- `next.config.ts` enables `cacheComponents`, `partialPrefetching`, `experimental.agentFeedback` and `experimental.agentUpgrade: "security"` — caching/prefetch behavior differs from classic Next; check the docs before using data fetching or caching APIs.
+- Request-time data must sit inside `<Suspense>`. This includes `<Nav>` in `app/layout.tsx` (it reads `usePathname()`) and every Supabase read.
 - Layouts use the globally generated `LayoutProps<"/">` type (no import needed) instead of hand-written props types.
+- Fonts come from `next/font/google` in `app/layout.tsx`: Press Start 2P, JetBrains Mono, Courier Prime (CSS variables `--font-press-start`, `--font-jetbrains-mono`, `--font-courier-prime`).
+- Contact email (SPEC 03): the `/acerca` form calls the Server Action `sendContactMessage` in `app/acerca/actions.ts`, which validates the fields, has a honeypot field (`website`), and sends through Resend. Env vars `RESEND_API_KEY`, `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL` are server-only. With the `onboarding@resend.dev` sender, the recipient must be the Resend account owner until a domain is verified.
+- Supabase client factories: `createClient()` in `lib/supabase/client.ts` (browser, used only by `saveScore`) and `lib/supabase/server.ts` (async, cookie-aware; call inside a Server Action, Route Handler, or `<Suspense>` because `cookies()` is request-time). Both are typed with `Database` from `lib/supabase/database.types.ts` (regenerate with the Supabase MCP `generate_typescript_types` after schema changes). Env vars `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. All env var names are in `.env.example`; real values go in `.env.local`.
+- Auth is still mock: `SessionProvider` in `lib/session.tsx` keeps `av_user` (`{ name }`) in `localStorage` and reads it after mount. No Supabase Auth and no `proxy.ts` yet.
+- Data (SPEC 06): tables `games` (catalog, `id` is the URL slug) and `scores` (`game_id`, `name` 1–12 chars, `score` 0–10,000,000), plus view `game_stats` (`best`, `plays` per game). RLS: public read; anyone can insert scores; no update/delete. Server-side reads go through `lib/queries.ts` (`getGames`, `getGame`, `getTopScores`, `getRecentScores`, `getGameStats`, `getHomeStats`), always inside `<Suspense>`, no caching (fresh on every request). Scores are saved with `saveScore` in `lib/session.tsx` (async insert, throws on failure); `av_scores` no longer exists. Games, scores, and stats are never mock: do not add fake data, and never add a catalog row without a working engine.
+
+## Games
+
+| `games.id`  | Spec | `sort_order` | Canvas notes                                             | HUD (besides player and score)   |
+| ----------- | ---- | ------------ | -------------------------------------------------------- | -------------------------------- |
+| `asteroids` | 05   | 1            | vector drawing, keyboard                                 | lives (`hearts`), level (`pad2`) |
+| `tetris`    | 07   | 2            | 450×600, "next piece" in a side strip                    | lines (`number`), level (`pad2`) |
+| `arkanoid`  | 08   | 3            | spritesheet, keyboard + mouse, level data in `levels.ts` | lives (`hearts`), level (`pad2`) |
+| `snake`     | 09   | 4            | apple sprite (`fruits.png`), keyboard                    | length (`number`)                |
+
+Game engine pattern (SPEC 05):
+
+- A game lives in `lib/games/<id>/` (`engine.ts`, `constants.ts`, optional data files) as a framework-free engine exposing `createEngine(canvas, { onChange, onGameOver })` → `{ start, stop, setPaused, restart }`. State stays in the closure; `onChange` fires only on snapshot changes (not per frame).
+- Shared types (`Engine`, `EngineSnapshot` = `{ score, state, hud }`, `GameDefinition`) live in `lib/games/types.ts`. Every playable game is registered in `lib/games/registry.ts` (`getGameDefinition(id)`, keyed by `games.id`) with its logic canvas size and HUD fields (`key`, Spanish `label`, `format` `number` / `hearts` / `pad2`, `initial`).
+- `components/game-canvas.tsx` mounts any registered engine in `useEffect` and calls `stop()` on cleanup; `components/game-player.tsx` looks the game up in the registry and renders the HUD from `definition.hud`. The shell owns pause, game over, restart and score saving; there is no mock arena. A new game only adds files; it does not change the shell.
+- Extra canvases from a reference game (e.g. Tetris "next piece") are drawn inside the single game canvas. Tall canvases are limited by `max-height` in `.game-canvas`.
+- Image assets live in `public/games/<id>/` and load inside `start()` (never at module level; ignore late `onload` after `stop()`).
+- Engines that read the mouse convert pointer coordinates with `getBoundingClientRect` and the logic size.
+- No sound yet in any game.
+- A new game needs its own engine, a registry entry, a `.cover-*` rule in `app/globals.css` (reuse an unused one or add one), its own `games` row (new migration), and its own spec: create it with `/new-game`, then implement with `/spec-impl`. Update the table above when it lands.
