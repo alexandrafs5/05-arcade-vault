@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Arcade Vault: online games platform where players compete for the highest score. The UI copy and the README are in Spanish; code, comments, specs and commits are in English. Four games are playable today (`asteroids`, `tetris`, `arkanoid`, `snake`), each with a real leaderboard in Supabase. Auth is still mock.
+Arcade Vault: online games platform where players compete for the highest score. The UI copy and the README are in Spanish; code, comments, specs and commits are in English. Five games are playable today (`asteroids`, `tetris`, `arkanoid`, `snake`, `frogger`), each with a real leaderboard in Supabase. Auth is still mock.
 
-The project follows Spec Driven Design: every feature starts as a spec in `specs/NN-<slug>.md` (01–09 so far, all `Implemented`) and is then implemented step by step.
+The project follows Spec Driven Design: every feature starts as a spec in `specs/NN-<slug>.md` (01–12 so far, all `Implemented`) and is then implemented step by step.
 
 ## Commands
 
@@ -19,6 +19,7 @@ The project follows Spec Driven Design: every feature starts as a spec in `specs
 
 - `/spec` writes a spec (questions first, then the file, status `Draft`); `/spec-impl NN-<slug>` implements it on a `spec-NN-<slug>` branch, one commit per plan step, merged through a pull request. `specs/.spec-config.yml` sets `AutoCreateBranch: true` (branch is created without asking). Both skills come from `Klerith/fernando-skills` (`npx skills@latest add Klerith/fernando-skills`).
 - `/new-game` (project skill, `.claude/skills/new-game/`, user-invoked only) is `/spec` specialised for adding a playable game: it ports a folder from `references/started-games/` or designs a game from scratch, and saves `specs/NN-<id>-game.md`. It never writes code; run `/spec-impl` afterwards.
+- `/spec-impl-game NN-<id>-game` (project skill, `.claude/skills/spec-impl-game/`, user-invoked only) wraps `/spec-impl` for a game spec: it reads and follows the `/spec-impl` skill, and once the spec is `Implemented` and committed it runs `@skin-designer <id>` and then `@mobile-porter <id>` (sequentially, never in parallel), merging `skins-<id>` and `mobile-<id>` locally into the spec branch (`--no-ff`). It never pushes or opens a PR.
 - `@game-planner` (project subagent, `.claude/agents/game-planner.md`) decides which game fits the platform next. It records every suggestion and its status in `references/game-suggestions-todo.md` (read first, updated on every run) and keeps durable user preferences in `.claude/agent-memory/game-planner/`. It never writes specs or code; run `/new-game <id>` with its top pick.
 - `@game-jam` (project subagent, `.claude/agents/game-jam.md`) takes a theme and designs three original games. For each it writes at least two Draft specs (core + feature) into `specs/game-jam/<game-id>/`, in the style of SPEC 07–09, and lists its assumptions in the answer. It never writes code. To build one: review it, copy it to `specs/NN-<id>-game.md` (next free number, re-check migration timestamp and `sort_order`), then run `/spec-impl`.
 - `@skin-designer` (project subagent, `.claude/agents/skin-designer.md`) gives ONE game the skins `classic` (default), `neon` and `retro`: it writes the code directly (no spec), verifies it with Playwright, commits on a `skins-<id>` branch (no push, no PR) and records the game in `references/game-with-themes.md`, which it owns. Run it as `@skin-designer <game-id>`; it never skins more than one game per run.
@@ -56,6 +57,7 @@ The project follows Spec Driven Design: every feature starts as a spec in `specs
 | `tetris`    | 07   | 2            | 450×600, "next piece" in a side strip                    | lines (`number`), level (`pad2`) |
 | `arkanoid`  | 08   | 3            | spritesheet, keyboard + mouse, level data in `levels.ts` | lives (`hearts`), level (`pad2`) |
 | `snake`     | 09   | 4            | apple sprite (`fruits.png`), keyboard                    | length (`number`)                |
+| `frogger`   | 12   | 5            | 640×560, primitives only, lane data in `levels.ts`, keyboard | lives (`hearts`), level (`pad2`) |
 
 Game engine pattern (SPEC 05):
 
