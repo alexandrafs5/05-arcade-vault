@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { GameCanvas } from "@/components/game-canvas";
+import { TouchControls } from "@/components/touch-controls";
 import { fmtNumber } from "@/lib/format";
 import { getGameDefinition } from "@/lib/games/registry";
 import {
@@ -259,6 +260,8 @@ function Player({
           <span>CARGA · 1MB</span>
         </div>
       </div>
+
+      <TouchControls touch={definition.touch} disabled={paused || over} />
 
       {over && (
         <div className="modal-bd">
