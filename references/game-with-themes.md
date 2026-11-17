@@ -39,6 +39,7 @@ Each skin must look good on the dark site. The player picks the skin in the HUD 
 - neon: near-black board with faint cyan grid, green glowing snake with cyan eyes, magenta glowing orb apple with yellow stem, shadowBlur 16.
 - retro: 5 colors, dark-green checkerboard, flat phosphor-green square blocks, amber pixel-art apple, square eyes, no glow.
 - Technique: apple sprite only in classic; neon and retro redraw the apple as vector shapes, so no tinting or new assets.
+
 ### tetris
 
 - classic: black bg, pastel filled blocks with top highlight (verbatim).
