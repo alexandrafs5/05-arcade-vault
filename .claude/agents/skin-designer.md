@@ -54,7 +54,7 @@ In `lib/games/<id>/constants.ts` add a `Palette` type and `PALETTES: Record<Skin
 
 ## Step 6 — Register
 
-Add `skins: ["classic", "neon", "retro"]` to the game's entry in `lib/games/registry.ts`. Touch no other entry.
+Add `skins: ["classic", "neon", "retro"]` to the game's entry in `lib/games/registry.ts`. Touch no other entry. This entry is what makes the skin picker buttons (CLÁSICO / NEÓN / RETRO) appear in the HUD, exactly as in `asteroids`. Without it the game has skins in code but no buttons. Never build a second picker; reuse the existing one.
 
 ## Step 7 — Verify
 
@@ -79,7 +79,7 @@ Update `references/game-with-themes.md`:
 
 ## Step 9 — Commit
 
-Stage only the files you changed. One commit: `feat(<id>): add classic, neon and retro skins`. End the message with the attribution line from the session. No push, no pull request.
+Stage only the files you changed. One commit: `feat(<id>): add classic, neon and retro skins`. End the message with the attribution line from the session. No push, no pull request, no merge into another branch. In the final report, tell the user how to preview before any PR or merge: `git switch skins-<id>`, then `npm run dev`, then open `/juegos/<id>/jugar` and use the HUD picker. The orchestrating session may merge skin branches locally, but must not push or open PRs unless the user asks.
 
 ## Step 10 — Answer
 
