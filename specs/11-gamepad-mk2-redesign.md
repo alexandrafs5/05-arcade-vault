@@ -1,6 +1,6 @@
 # SPEC 11 — Gamepad MK-II redesign
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 10
 > **Date:** 2026-11-17
 > **Objective:** Restyle the on-screen touch gamepad to the "Gamepad MK-II" neon design from `references/gamepad-assets/`, without changing which keys it sends or how the player page is laid out.
@@ -69,19 +69,19 @@ const [lit, setLit] = useState<ReadonlySet<string>>(() => new Set());
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` and `npm run build` finish with no errors.
-- [ ] With a mouse (`pointer: fine`) the player page of the four games looks exactly as before: no pad visible.
-- [ ] With touch emulation at 390×844 the pad under the canvas matches `references/gamepad-assets/gamepad-neon.png` in structure: shell with inner border and dot texture, four raised d-pad keys, center hub with a cyan gem, B (cyan) and A (magenta) side by side on one line.
-- [ ] The gem pulses; under `prefers-reduced-motion: reduce` it does not animate.
-- [ ] Holding a d-pad key or A/B lights it (pushed down, glow); releasing, sliding off then lifting, pause, game over, tab switch and unmount all return it to unlit.
-- [ ] Pressing a physical key the pad owns (arrows; `Space` in Asteroids and Tetris; `KeyX` in Tetris) lights the matching pad key and unlights it on release.
-- [ ] Buttons with no action in a game stay dimmed, never light up, and do nothing when pressed.
-- [ ] Key mapping is unchanged: Asteroids (rotate, thrust, A fires), Tetris (move, soft drop, rotate, A hard drop, B rotates), Arkanoid (paddle), Snake (four directions) all behave as in SPEC 10.
-- [ ] Two fingers at once still work (a direction and A in Asteroids).
-- [ ] With touch emulation at 390×844 and at 360×640, canvas, HUD and pad fit with no vertical page scroll on all four games, Tetris included.
-- [ ] Long-press on a pad button shows no context menu or text selection; the pad does not scroll or zoom the page.
-- [ ] Keyboard play on desktop and typing the name in the game-over `INPUT` still work.
-- [ ] No console errors on the four player pages during a touch session.
+- [x] `npm run lint` and `npm run build` finish with no errors.
+- [x] With a mouse (`pointer: fine`) the player page of the four games looks exactly as before: no pad visible.
+- [x] With touch emulation at 390×844 the pad under the canvas matches `references/gamepad-assets/gamepad-neon.png` in structure: shell with inner border and dot texture, four raised d-pad keys, center hub with a cyan gem, B (cyan) and A (magenta) side by side on one line.
+- [x] The gem pulses; under `prefers-reduced-motion: reduce` it does not animate.
+- [x] Holding a d-pad key or A/B lights it (pushed down, glow); releasing, sliding off then lifting, pause, game over, tab switch and unmount all return it to unlit.
+- [x] Pressing a physical key the pad owns (arrows; `Space` in Asteroids and Tetris; `KeyX` in Tetris) lights the matching pad key and unlights it on release.
+- [x] Buttons with no action in a game stay dimmed, never light up, and do nothing when pressed.
+- [x] Key mapping is unchanged: Asteroids (rotate, thrust, A fires), Tetris (move, soft drop, rotate, A hard drop, B rotates), Arkanoid (paddle), Snake (four directions) all behave as in SPEC 10.
+- [x] Two fingers at once still work (a direction and A in Asteroids).
+- [x] With touch emulation at 390×844 and at 360×640, canvas, HUD and pad fit with no vertical page scroll on all four games, Tetris included.
+- [x] Long-press on a pad button shows no context menu or text selection; the pad does not scroll or zoom the page.
+- [x] Keyboard play on desktop and typing the name in the game-over `INPUT` still work.
+- [x] No console errors on the four player pages during a touch session.
 
 ## Decisions
 
