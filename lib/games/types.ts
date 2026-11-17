@@ -2,6 +2,8 @@
 // An engine is framework-free: it owns a canvas, keeps state in its closure,
 // and reports snapshots through callbacks. See lib/games/registry.ts.
 
+import type { SkinId } from "./skins";
+
 export type EngineState = "playing" | "dead" | "gameover";
 
 export type EngineSnapshot = {
@@ -21,11 +23,18 @@ export type Engine = {
   stop: () => void; // cancel the loop and remove window listeners
   setPaused: (paused: boolean) => void;
   restart: () => void; // reset to a fresh game
+  // Swap the skin live, without resetting the game. Must repaint one frame when paused.
+  setSkin?: (skin: SkinId) => void;
+};
+
+export type EngineOptions = {
+  skin?: SkinId; // initial skin; engines default to "classic"
 };
 
 export type CreateEngine = (
   canvas: HTMLCanvasElement,
   cb: EngineCallbacks,
+  opts?: EngineOptions,
 ) => Engine;
 
 export type HudField = {
@@ -41,4 +50,5 @@ export type GameDefinition = {
   width: number; // logic canvas size
   height: number;
   hud: HudField[]; // shown after Jugador and Puntuación
+  skins?: SkinId[]; // skins the engine implements; the player shows a picker when set
 };

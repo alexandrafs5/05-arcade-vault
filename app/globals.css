@@ -1043,6 +1043,66 @@ a {
   gap: 10px;
 }
 
+/* Skin picker: segmented radio group; each dot previews the skin's own palette. */
+.skin-picker {
+  display: flex;
+  border: 1px solid var(--line);
+}
+.skin-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background: transparent;
+  border: 0;
+  border-right: 1px solid var(--line);
+  color: var(--ink-dim);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+.skin-opt:last-child {
+  border-right: 0;
+}
+.skin-opt:hover {
+  color: var(--ink);
+}
+.skin-opt:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: -2px;
+}
+.skin-opt[aria-checked="true"] {
+  color: var(--ink);
+  background: var(--bg-3);
+  box-shadow: inset 0 -2px 0 var(--cyan);
+}
+.skin-dot {
+  width: 10px;
+  height: 10px;
+  flex: none;
+}
+.skin-classic .skin-dot {
+  background: var(--silver);
+}
+.skin-neon .skin-dot {
+  background: var(--cyan);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--cyan);
+}
+.skin-retro .skin-dot {
+  background: #ffb000;
+  box-shadow: 2px 2px 0 #7a5400;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skin-opt {
+    transition: none;
+  }
+}
+
 .crt {
   position: relative;
   border-radius: 28px;
