@@ -1478,8 +1478,12 @@ a {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pad-btn {
+  .pad-btn,
+  .pad-ab .pad-btn::after {
     transition: none;
+  }
+  .pad-dpad::after {
+    animation: none;
   }
 }
 
