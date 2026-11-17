@@ -30,6 +30,7 @@ const GAMES: Record<string, GameDefinition> = {
       { key: "lines", label: "Líneas", format: "number", initial: 0 },
       { key: "level", label: "Nivel", format: "pad2", initial: 1 },
     ],
+    skins: ["classic", "neon", "retro"],
   },
   arkanoid: {
     id: "arkanoid",

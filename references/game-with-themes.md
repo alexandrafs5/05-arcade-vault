@@ -13,9 +13,9 @@ Each skin must look good on the dark site. The player picks the skin in the HUD 
 | Game        | classic | neon | retro | Branch            | Date       |
 | ----------- | ------- | ---- | ----- | ----------------- | ---------- |
 | `asteroids` | ✓       | ✓    | ✓     | `skins-asteroids` | 2026-11-16 |
-| `tetris`    | —       | —    | —     | —                 | —          |
 | `arkanoid`  | ✓       | ✓    | ✓     | `skins-arkanoid`  | 2026-11-16 |
 | `snake`     | ✓       | ✓    | ✓     | `skins-snake`     | 2026-11-16 |
+| `tetris`    | ✓       | ✓    | ✓     | `skins-tetris`    | 2026-11-16 |
 
 ## Notes per game
 
@@ -39,3 +39,9 @@ Each skin must look good on the dark site. The player picks the skin in the HUD 
 - neon: near-black board with faint cyan grid, green glowing snake with cyan eyes, magenta glowing orb apple with yellow stem, shadowBlur 16.
 - retro: 5 colors, dark-green checkerboard, flat phosphor-green square blocks, amber pixel-art apple, square eyes, no glow.
 - Technique: apple sprite only in classic; neon and retro redraw the apple as vector shapes, so no tinting or new assets.
+### tetris
+
+- classic: black bg, pastel filled blocks with top highlight (verbatim).
+- neon: #05050c bg, site-color pieces (cyan, yellow, magenta, green, orange, blue, violet, white) as glowing outlines over a faint tinted fill, shadowBlur 12, cyan divider and label.
+- retro: dark green bg, amber / pale / phosphor / mid green flat blocks with a hollow core, 2px gaps, outline-only ghost, no glow.
+- Technique: pure vector redraw via `drawBlock(ctx, pal, ...)` with `Palette.blockStyle`; no sprites.
