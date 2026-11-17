@@ -346,7 +346,6 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
   let rafId = 0;
   let lastTime: number | null = null; // null = next frame uses dt = 0
   let blinkOn = true; // turtle blink warning, toggled from the frame clock
-  let bgCache: HTMLCanvasElement | null = null; // static background, current skin
 
   const px = (cells: number) => cells * CELL;
 
@@ -404,64 +403,63 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
   // Corner radius: retro is all square corners.
   const rad = (r: number) => (pal.style === "retro" ? 0 : r);
 
-  // Draws the static background onto `c` (the screen, or the offscreen cache).
-  function drawBackground(c: CanvasRenderingContext2D) {
+  function drawBackground() {
     const retro = pal.style === "retro";
     // Goal row: walls, with the bays drawn on top.
-    c.fillStyle = pal.wall;
-    c.fillRect(0, 0, W, px(1));
+    ctx.fillStyle = pal.wall;
+    ctx.fillRect(0, 0, W, px(1));
     for (let r = ROW_RIVER_TOP; r <= ROW_RIVER_BOT; r++) {
-      c.fillStyle = pal.river;
-      c.fillRect(0, px(r), W, CELL);
+      ctx.fillStyle = pal.river;
+      ctx.fillRect(0, px(r), W, CELL);
       // Faint waves (retro: pixel dashes).
       if (retro) {
-        c.fillStyle = pal.riverWave;
+        ctx.fillStyle = pal.riverWave;
         for (let x = (r % 2) * 20; x < W; x += 80) {
-          c.fillRect(x, px(r) + 8, 16, 4);
-          c.fillRect(x + 40, px(r) + 28, 16, 4);
+          ctx.fillRect(x, px(r) + 8, 16, 4);
+          ctx.fillRect(x + 40, px(r) + 28, 16, 4);
         }
         continue;
       }
-      c.strokeStyle = pal.riverWave;
-      c.lineWidth = 2;
-      c.beginPath();
+      ctx.strokeStyle = pal.riverWave;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
       for (let x = (r % 2) * 20; x < W; x += 80) {
-        c.moveTo(x, px(r) + 10);
-        c.quadraticCurveTo(x + 10, px(r) + 4, x + 20, px(r) + 10);
-        c.moveTo(x + 40, px(r) + 30);
-        c.quadraticCurveTo(x + 50, px(r) + 24, x + 60, px(r) + 30);
+        ctx.moveTo(x, px(r) + 10);
+        ctx.quadraticCurveTo(x + 10, px(r) + 4, x + 20, px(r) + 10);
+        ctx.moveTo(x + 40, px(r) + 30);
+        ctx.quadraticCurveTo(x + 50, px(r) + 24, x + 60, px(r) + 30);
       }
-      c.stroke();
+      ctx.stroke();
     }
     for (const r of [ROW_MEDIAN, ROW_START]) {
-      c.fillStyle = pal.safe;
-      c.fillRect(0, px(r), W, CELL);
+      ctx.fillStyle = pal.safe;
+      ctx.fillRect(0, px(r), W, CELL);
       if (pal.style === "neon") {
         // Glowing green edge line instead of a flat strip.
-        c.beginPath();
-        c.moveTo(0, px(r) + 1.5);
-        c.lineTo(W, px(r) + 1.5);
-        strokeGlow(pal.safeEdge, 3, c);
+        ctx.beginPath();
+        ctx.moveTo(0, px(r) + 1.5);
+        ctx.lineTo(W, px(r) + 1.5);
+        strokeGlow(pal.safeEdge, 3);
       } else {
-        c.fillStyle = pal.safeEdge;
-        c.fillRect(0, px(r), W, retro ? 4 : 3);
+        ctx.fillStyle = pal.safeEdge;
+        ctx.fillRect(0, px(r), W, retro ? 4 : 3);
       }
     }
     for (let r = ROW_ROAD_TOP; r <= ROW_ROAD_BOT; r++) {
-      c.fillStyle = pal.road;
-      c.fillRect(0, px(r), W, CELL);
+      ctx.fillStyle = pal.road;
+      ctx.fillRect(0, px(r), W, CELL);
     }
     // Dashed lane dividers between road lanes.
-    c.strokeStyle = pal.roadDash;
-    c.lineWidth = pal.dashWidth;
-    c.setLineDash([16, 16]);
-    c.beginPath();
+    ctx.strokeStyle = pal.roadDash;
+    ctx.lineWidth = pal.dashWidth;
+    ctx.setLineDash([16, 16]);
+    ctx.beginPath();
     for (let r = ROW_ROAD_TOP + 1; r <= ROW_ROAD_BOT; r++) {
-      c.moveTo(0, px(r));
-      c.lineTo(W, px(r));
+      ctx.moveTo(0, px(r));
+      ctx.lineTo(W, px(r));
     }
-    c.stroke();
-    c.setLineDash([]);
+    ctx.stroke();
+    ctx.setLineDash([]);
   }
 
   function drawFrogShape(cx: number, cy: number, dir: Dir, scale: number) {
@@ -696,24 +694,8 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     ctx.fillRect(0, H - 8, W * ratio, 8);
   }
 
-  // Neon only for now: the static background is drawn once into an offscreen
-  // canvas (never attached to the DOM) and blitted each frame.
-  function blitBackground() {
-    if (pal.style !== "neon") {
-      drawBackground(ctx);
-      return;
-    }
-    if (!bgCache) {
-      bgCache = document.createElement("canvas");
-      bgCache.width = W;
-      bgCache.height = H;
-      drawBackground(bgCache.getContext("2d")!);
-    }
-    ctx.drawImage(bgCache, 0, 0);
-  }
-
   function draw() {
-    blitBackground();
+    drawBackground();
     drawBays();
     drawLanes();
     drawFrog();
@@ -773,7 +755,6 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     },
     setSkin(skin) {
       pal = PALETTES[skin];
-      bgCache = null; // rebuilt lazily on the next draw
       if (paused) draw(); // the loop keeps drawing, this just repaints at once
     },
     setPaused(p) {
@@ -783,7 +764,6 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     },
     restart() {
       game.reset();
-      bgCache = null;
       overReported = false;
       lastSnap = null;
       lastTime = null;
