@@ -217,7 +217,11 @@ function Player({
           {paused && (
             <div
               className="crt-content"
-              style={{ background: "rgba(0,0,0,0.6)", zIndex: 5 }}
+              style={{
+                background: "rgba(0,0,0,0.6)",
+                zIndex: 5,
+                pointerEvents: "auto",
+              }}
             >
               <div>
                 <div className="pixel neon-yellow" style={{ fontSize: 22 }}>
@@ -234,6 +238,14 @@ function Player({
                 >
                   PULSA REANUDAR PARA CONTINUAR
                 </div>
+                {skins && (
+                  <SkinPicker
+                    className="pause-skins"
+                    skins={skins}
+                    value={skin}
+                    onPick={pickSkin}
+                  />
+                )}
               </div>
             </div>
           )}
