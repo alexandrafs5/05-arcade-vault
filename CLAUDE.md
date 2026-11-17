@@ -19,6 +19,7 @@ The project follows Spec Driven Design: every feature starts as a spec in `specs
 
 - `/spec` writes a spec (questions first, then the file, status `Draft`); `/spec-impl NN-<slug>` implements it on a `spec-NN-<slug>` branch, one commit per plan step, merged through a pull request. `specs/.spec-config.yml` sets `AutoCreateBranch: true` (branch is created without asking). Both skills come from `Klerith/fernando-skills` (`npx skills@latest add Klerith/fernando-skills`).
 - `/new-game` (project skill, `.claude/skills/new-game/`, user-invoked only) is `/spec` specialised for adding a playable game: it ports a folder from `references/started-games/` or designs a game from scratch, and saves `specs/NN-<id>-game.md`. It never writes code; run `/spec-impl` afterwards.
+- `@game-planner` (project subagent, `.claude/agents/game-planner.md`) decides which game fits the platform next. It records every suggestion and its status in `references/game-suggestions-todo.md` (read first, updated on every run) and keeps durable user preferences in `.claude/agent-memory/game-planner/`. It never writes specs or code; run `/new-game <id>` with its top pick.
 - Always use `/frontend-design` to design user interface.
 - `/worktree` creates an isolated git worktree in `.trees/<name>` for parallel work.
 - MCP: `supabase` (project-scoped in `.mcp.json`; use it for migrations, SQL and type generation) and `playwright` (browser checks; its logs in `.playwright-mcp/` are gitignored).
@@ -29,7 +30,7 @@ The project follows Spec Driven Design: every feature starts as a spec in `specs
 - `components/` — shared UI (`nav`, `footer`, `game-card`, `library`, `hall-of-fame`, `game-player`, `game-canvas`, `auth-form`, `contact-form`, ...).
 - `lib/` — `queries.ts` (Supabase reads), `session.tsx` (mock user + `saveScore`), `format.ts` (display helpers), `data.ts` (static Spanish copy only: categories, features, FAQ), `games/` (engines + registry), `supabase/` (client factories + generated types).
 - `supabase/migrations/` — schema and catalog rows. Never edit an applied migration; add a new file.
-- `references/` — read-only source material, not part of the app: `templates/` (original HTML/JSX design), `started-games/` (vanilla JS games to port), `source-assets/`.
+- `references/` — read-only source material, not part of the app: `templates/` (original HTML/JSX design), `started-games/` (vanilla JS games to port), `source-assets/`, `implemented-games.md`. Exception: `game-suggestions-todo.md` is owned and edited by `@game-planner`.
 
 ## Stack / gotchas
 
