@@ -127,6 +127,25 @@ Conventions:
 - [ ] `/juegos/asteroids/jugar`, `/juegos/tetris/jugar`, `/juegos/arkanoid/jugar` and `/juegos/snake/jugar` are untouched (`git diff --stat` shows no file under their folders).
 - [ ] `npm run lint`, `npx tsc --noEmit` and `npm run build` finish with no errors.
 
+## Results
+
+### After steps 3–4 (neon sprites; idle skip and allocation fixes not done yet)
+
+Script: `scripts/perf/frame-cost.js` (software canvas), 4 s runs, one session, `main` first, then the branch. `classic` and `retro` run identical code in both columns, so their change is the noise level.
+
+| Skin and rate | avg `main` | avg branch | p95 `main` | p95 branch | n `main` / branch |
+| ------------- | ---------- | ---------- | ---------- | ---------- | ------------------ |
+| neon 1×       | 8.8        | 5.0        | 11.1       | 6.7        | 210 / 218          |
+| neon 4×       | 46.9       | 29.6       | 63.8       | 48.7       | 60 / 81            |
+| classic 1×    | 3.5        | 3.0        | 4.8        | 4.3        | 218 / 216          |
+| classic 4×    | 23.8       | 16.4       | 34.5       | 23.2       | 79 / 108           |
+| retro 1×      | 2.2        | 1.8        | 3.1        | 2.8        | 220 / 215          |
+| retro 4×      | 11.0       | 10.1       | 15.3       | 14.0       | 122 / 122          |
+
+Neon at 1× improved by about 43% (8.8 → 5.0 ms). Neon at 4× improved by about 37% but is noisy (n = 60–81) and is above the <8 ms target. Classic at 4× also reads above 8 ms on this machine with unchanged code, so the absolute thresholds look too strict for this harness; to be revisited after step 6.
+
+Checks: `npm run lint`, `npx tsc --noEmit` and `npm run build` pass.
+
 ## Decisions
 
 - **Yes:** one game (Frogger) and one skin (neon) per spec. **No:** fixing every borderline game at once: a single-cause spec stays small and works as a template for a repeatable review.
