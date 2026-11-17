@@ -37,6 +37,18 @@ import {
   type LaneItem,
 } from "./levels";
 
+// Hoisted so the frame loop allocates no arrays or objects.
+const SIDES = [-1, 1] as const;
+const SAFE_ROWS = [ROW_MEDIAN, ROW_START] as const;
+const LANE_DASH = [16, 16];
+const NO_DASH: number[] = [];
+const FROG_ANGLE: Record<Dir, number> = {
+  up: 0,
+  right: Math.PI / 2,
+  down: Math.PI,
+  left: -Math.PI / 2,
+};
+
 export type Frog = {
   col: number; // float: a log or turtle group carries it sideways
   row: number; // always an integer
@@ -78,7 +90,14 @@ function createGame() {
   };
 
   // The lane of a river or road row, or undefined for the safe rows.
-  const laneAt = (row: number) => lanes.find((l) => l.row === row);
+  // Indexed by row and rebuilt whenever `lanes` is replaced (setLanes).
+  let laneByRow: (Lane | undefined)[] = [];
+  const laneAt = (row: number) => laneByRow[row];
+  function setLanes(next: Lane[]) {
+    lanes = next;
+    laneByRow = [];
+    for (const l of next) laneByRow[l.row] = l;
+  }
 
   // The log or visible turtle group under the frog centre, if any.
   function supportAt(f: Frog): Lane | null {
@@ -138,7 +157,7 @@ function createGame() {
     if (bays.every(Boolean)) {
       score += POINTS_ROUND;
       level += 1;
-      lanes = buildLanes(level);
+      setLanes(buildLanes(level));
       bays = BAYS.map(() => false);
     }
     spawnFrog();
@@ -183,7 +202,7 @@ function createGame() {
   return {
     reset() {
       level = 1;
-      lanes = buildLanes(level);
+      setLanes(buildLanes(level));
       frog = { col: START_COL, row: ROW_START };
       bays = BAYS.map(() => false);
       score = 0;
@@ -319,35 +338,102 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
 
   const game = createGame();
   let overReported = false;
-  let lastSnap: EngineSnapshot | null = null;
+  // Last values reported to the shell; compared field by field each frame.
+  let lastState: EngineState | null = null; // null = nothing reported yet
+  let lastScore = 0;
+  let lastLives = 0;
+  let lastLevel = 0;
 
   // onChange only when score, state or a hud value changes; onGameOver once per game.
   function emitIfChanged() {
-    const snap = game.snapshot();
+    const state: EngineState = game.over ? "gameover" : "playing";
     if (
-      lastSnap &&
-      lastSnap.score === snap.score &&
-      lastSnap.state === snap.state &&
-      lastSnap.hud.lives === snap.hud.lives &&
-      lastSnap.hud.level === snap.hud.level
+      lastState !== null &&
+      lastScore === game.score &&
+      lastState === state &&
+      lastLives === game.lives &&
+      lastLevel === game.level
     )
       return;
-    lastSnap = snap;
-    cb.onChange(snap);
-    if (snap.state === "gameover" && !overReported) {
+    lastState = state;
+    lastScore = game.score;
+    lastLives = game.lives;
+    lastLevel = game.level;
+    cb.onChange(game.snapshot());
+    if (state === "gameover" && !overReported) {
       overReported = true;
-      cb.onGameOver(snap.score);
+      cb.onGameOver(game.score);
     }
   }
 
-  const ctx = canvas.getContext("2d")!;
+  // `let`: bakeSprite() points it at an offscreen canvas while it draws a sprite.
+  let ctx = canvas.getContext("2d")!;
   let paused = false;
   let running = false;
   let rafId = 0;
   let lastTime: number | null = null; // null = next frame uses dt = 0
   let blinkOn = true; // turtle blink warning, toggled from the frame clock
+  // Nothing moves while paused or after game over: draw once on entering that
+  // state, and again after a skin change or restart (`dirty`).
+  let dirty = true;
+  let wasIdle = false;
 
   const px = (cells: number) => cells * CELL;
+
+  // Neon baked sprites: shadowBlur is the frame cost, so each glowing entity is
+  // drawn once, with its glow, into an ImageBitmap and blitted afterwards.
+  // Key = lane row * 32 + car variant (0 for other kinds). Built lazily and
+  // async (createImageBitmap); until ready the shape is drawn live.
+  const sprites = new Map<number, ImageBitmap>();
+  const pendingSprites = new Set<number>();
+  let spriteGen = 0; // bumped on every reset, so late bitmaps are discarded
+
+  const SPRITE_TURTLE = -1;
+  const SPRITE_BAY = -2;
+  const SPRITE_EDGE = -3;
+
+  const spriteMargin = () => Math.ceil(pal.glow * 1.5) + 2;
+
+  function resetSprites() {
+    spriteGen++;
+    for (const bm of sprites.values()) bm.close();
+    sprites.clear();
+    pendingSprites.clear();
+  }
+
+  // Draws the sprite at the entity origin (x, y). False if not ready yet.
+  function blitSprite(key: number, x: number, y: number): boolean {
+    const bm = sprites.get(key);
+    if (!bm) return false;
+    const m = spriteMargin();
+    ctx.drawImage(bm, x - m, y - m);
+    return true;
+  }
+
+  // `draw` paints the entity with its origin at (m, m), where m = spriteMargin().
+  function bakeSprite(key: number, w: number, h: number, draw: () => void) {
+    pendingSprites.add(key);
+    const gen = spriteGen;
+    const m = spriteMargin();
+    const off = document.createElement("canvas");
+    off.width = w + 2 * m;
+    off.height = h + 2 * m;
+    const real = ctx;
+    ctx = off.getContext("2d")!;
+    try {
+      draw();
+    } finally {
+      ctx = real;
+    }
+    createImageBitmap(off).then((bm) => {
+      if (gen !== spriteGen) {
+        bm.close();
+        return;
+      }
+      pendingSprites.delete(key);
+      sprites.set(key, bm);
+    });
+  }
 
   // Fills the current path. Classic and retro: flat fill. Neon: faint tinted fill
   // plus a glowing outline; the shadow is scoped by save/restore so it never leaks.
@@ -427,15 +513,26 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
       }
       ctx.stroke();
     }
-    for (const r of [ROW_MEDIAN, ROW_START]) {
+    for (const r of SAFE_ROWS) {
       ctx.fillStyle = pal.safe;
       ctx.fillRect(0, px(r), W, CELL);
       if (pal.style === "neon") {
         // Glowing green edge line instead of a flat strip.
-        ctx.beginPath();
-        ctx.moveTo(0, px(r) + 1.5);
-        ctx.lineTo(W, px(r) + 1.5);
-        strokeGlow(pal.safeEdge, 3);
+        if (!blitSprite(SPRITE_EDGE, 0, px(r))) {
+          if (!pendingSprites.has(SPRITE_EDGE)) {
+            const m = spriteMargin();
+            bakeSprite(SPRITE_EDGE, W, 3, () => {
+              ctx.beginPath();
+              ctx.moveTo(m, m + 1.5);
+              ctx.lineTo(m + W, m + 1.5);
+              strokeGlow(pal.safeEdge, 3);
+            });
+          }
+          ctx.beginPath();
+          ctx.moveTo(0, px(r) + 1.5);
+          ctx.lineTo(W, px(r) + 1.5);
+          strokeGlow(pal.safeEdge, 3);
+        }
       } else {
         ctx.fillStyle = pal.safeEdge;
         ctx.fillRect(0, px(r), W, retro ? 4 : 3);
@@ -448,37 +545,31 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     // Dashed lane dividers between road lanes.
     ctx.strokeStyle = pal.roadDash;
     ctx.lineWidth = pal.dashWidth;
-    ctx.setLineDash([16, 16]);
+    ctx.setLineDash(LANE_DASH);
     ctx.beginPath();
     for (let r = ROW_ROAD_TOP + 1; r <= ROW_ROAD_BOT; r++) {
       ctx.moveTo(0, px(r));
       ctx.lineTo(W, px(r));
     }
     ctx.stroke();
-    ctx.setLineDash([]);
+    ctx.setLineDash(NO_DASH);
   }
 
   function drawFrogShape(cx: number, cy: number, dir: Dir, scale: number) {
     const s = scale;
     ctx.save();
     ctx.translate(cx, cy);
-    const angle = {
-      up: 0,
-      right: Math.PI / 2,
-      down: Math.PI,
-      left: -Math.PI / 2,
-    }[dir];
-    ctx.rotate(angle);
+    ctx.rotate(FROG_ANGLE[dir]);
     if (pal.style === "retro") {
       // Blocky pixel frog.
       ctx.fillStyle = pal.frogDark;
-      for (const sx of [-1, 1]) {
+      for (const sx of SIDES) {
         ctx.fillRect(sx * 14 * s - 4 * s, -14 * s, 8 * s, 10 * s);
         ctx.fillRect(sx * 14 * s - 4 * s, 4 * s, 8 * s, 10 * s);
       }
       ctx.fillStyle = pal.frog;
       ctx.fillRect(-10 * s, -12 * s, 20 * s, 26 * s);
-      for (const sx of [-1, 1]) {
+      for (const sx of SIDES) {
         ctx.fillStyle = pal.eyeWhite;
         ctx.fillRect(sx * 6 * s - 3 * s, -12 * s, 6 * s, 6 * s);
         ctx.fillStyle = pal.eyePupil;
@@ -488,7 +579,7 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
       return;
     }
     // Legs.
-    for (const sx of [-1, 1]) {
+    for (const sx of SIDES) {
       ctx.beginPath();
       ctx.ellipse(sx * 13 * s, -8 * s, 4 * s, 7 * s, sx * 0.5, 0, Math.PI * 2);
       ctx.ellipse(
@@ -507,7 +598,7 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     ctx.ellipse(0, 0, 12 * s, 14 * s, 0, 0, Math.PI * 2);
     paint(pal.frog);
     // Eyes.
-    for (const sx of [-1, 1]) {
+    for (const sx of SIDES) {
       ctx.fillStyle = pal.eyeWhite;
       ctx.beginPath();
       ctx.arc(sx * 6 * s, -10 * s, 4 * s, 0, Math.PI * 2);
@@ -526,9 +617,21 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
       const w = px(BAY_WIDTH);
       ctx.fillStyle = pal.style === "neon" ? pal.wall : pal.bay;
       ctx.fillRect(x + 2, 2, w - 4, CELL - 4);
-      ctx.beginPath();
-      ctx.rect(x + 2, 2, w - 4, CELL - 4);
-      strokeGlow(pal.bayBorder, pal.style === "retro" ? 4 : 3);
+      if (pal.style === "neon" && blitSprite(SPRITE_BAY, x, 0)) {
+        // Border baked with its glow.
+      } else {
+        if (pal.style === "neon" && !pendingSprites.has(SPRITE_BAY)) {
+          const m = spriteMargin();
+          bakeSprite(SPRITE_BAY, w, CELL, () => {
+            ctx.beginPath();
+            ctx.rect(m + 2, m + 2, w - 4, CELL - 4);
+            strokeGlow(pal.bayBorder, 3);
+          });
+        }
+        ctx.beginPath();
+        ctx.rect(x + 2, 2, w - 4, CELL - 4);
+        strokeGlow(pal.bayBorder, pal.style === "retro" ? 4 : 3);
+      }
       if (game.bays[i]) drawFrogShape(x + w / 2, CELL / 2, "down", 1);
     }
   }
@@ -548,7 +651,8 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     const wx = dir === 1 ? x + w - 16 : x + 7;
     ctx.fillRect(wx, y + 12, 9, CELL - 24);
     ctx.fillStyle = pal.wheel;
-    for (const wxp of [x + 8, x + w - 8]) {
+    for (let k = 0; k < 2; k++) {
+      const wxp = k === 0 ? x + 8 : x + w - 8;
       if (pal.style === "retro") {
         ctx.fillRect(wxp - 4, y + 4, 8, 6);
         ctx.fillRect(wxp - 4, y + CELL - 10, 8, 6);
@@ -572,7 +676,8 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     ctx.fillStyle = pal.windshield;
     ctx.fillRect(dir === 1 ? cabX + cabW - 7 : cabX + 2, y + 12, 5, CELL - 24);
     ctx.fillStyle = pal.wheel;
-    for (const wxp of [x + 12, x + w / 2, x + w - 12]) {
+    for (let k = 0; k < 3; k++) {
+      const wxp = k === 0 ? x + 12 : k === 1 ? x + w / 2 : x + w - 12;
       if (pal.style === "retro") {
         ctx.fillRect(wxp - 4, y + 2, 8, 6);
         ctx.fillRect(wxp - 4, y + CELL - 8, 8, 6);
@@ -639,12 +744,51 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
   }
 
   function drawLanes() {
+    const neon = pal.style === "neon";
     for (const lane of game.lanes) {
       const y = px(lane.row);
       for (const item of lane.items) {
         const x = px(item.col);
         const w = px(lane.width);
         if (x + w < 0 || x > W) continue;
+        if (neon && (lane.kind === "car" || lane.kind === "truck")) {
+          const variant =
+            lane.kind === "car" ? item.variant % pal.cars.length : 0;
+          const key = lane.row * 32 + variant;
+          if (blitSprite(key, x, y)) continue;
+          if (!pendingSprites.has(key)) {
+            const m = spriteMargin();
+            if (lane.kind === "car")
+              bakeSprite(key, w, CELL, () =>
+                drawCar(m, m, w, lane.dir, variant),
+              );
+            else bakeSprite(key, w, CELL, () => drawTruck(m, m, w, lane.dir));
+          }
+        }
+        if (neon && lane.kind === "log") {
+          const key = lane.row * 32;
+          if (blitSprite(key, x, y)) continue;
+          if (!pendingSprites.has(key)) {
+            const m = spriteMargin();
+            bakeSprite(key, w, CELL, () => drawLog(m, m, w));
+          }
+        } else if (neon && lane.kind === "turtle") {
+          const phase = game.turtlePhase(item);
+          if (phase !== "submerged") {
+            if (phase === "blink" && !blinkOn) continue;
+            if (sprites.has(SPRITE_TURTLE)) {
+              for (let i = 0; i < lane.width; i++)
+                blitSprite(SPRITE_TURTLE, x + i * CELL, y);
+              continue;
+            }
+            if (!pendingSprites.has(SPRITE_TURTLE)) {
+              const m = spriteMargin();
+              bakeSprite(SPRITE_TURTLE, CELL, CELL, () =>
+                drawTurtles(m, m, 1, "visible"),
+              );
+            }
+          }
+        }
         if (lane.kind === "car") drawCar(x, y, w, lane.dir, item.variant);
         else if (lane.kind === "truck") drawTruck(x, y, w, lane.dir);
         else if (lane.kind === "log") drawLog(x, y, w);
@@ -706,7 +850,12 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
       game.update(dt);
     }
     emitIfChanged();
-    draw();
+    const idle = paused || game.over;
+    if (!idle || dirty || !wasIdle) {
+      draw();
+      dirty = false;
+    }
+    wasIdle = idle;
     rafId = requestAnimationFrame(frame);
   }
 
@@ -745,23 +894,29 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     stop() {
       running = false;
       cancelAnimationFrame(rafId);
+      resetSprites();
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("blur", clearInput);
       clearInput();
     },
     setSkin(skin) {
       pal = PALETTES[skin];
-      if (paused) draw(); // the loop keeps drawing, this just repaints at once
+      resetSprites();
+      dirty = true;
+      if (paused || game.over) draw(); // repaint at once while idle
     },
     setPaused(p) {
       paused = p;
       lastTime = null;
       clearInput();
+      if (p) dirty = true; // one repaint of the paused state
     },
     restart() {
       game.reset();
+      resetSprites();
+      dirty = true;
       overReported = false;
-      lastSnap = null;
+      lastState = null;
       lastTime = null;
       emitIfChanged();
     },
