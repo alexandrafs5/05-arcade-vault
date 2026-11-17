@@ -1,15 +1,22 @@
 import type { EngineSnapshot, EngineState } from "../types";
 import {
   BAYS,
+  BAY_WIDTH,
   COLS,
+  DEATH_PAUSE,
   DIR_VEC,
   HOP_MS,
+  POINTS_BAY,
+  POINTS_ROUND,
   POINTS_ROW,
+  POINTS_TIME,
+  ROW_GOALS,
   ROW_START,
   START_COL,
   START_LIVES,
   TURTLE_BLINK,
   TURTLE_VISIBLE,
+  VEHICLE_MARGIN,
   type Dir,
 } from "./constants";
 import {
@@ -51,6 +58,81 @@ export function createGame() {
   let hop: Hop | null = null;
   let pending: Dir | null = null; // one hop buffered while hopping
   let maxRow = ROW_START; // highest row reached since the last spawn after a bay
+  let deathT = 0; // seconds left of the post-death pause (world frozen)
+  let marker: { col: number; row: number } | null = null; // where the frog died
+
+  const turtlePhase = (item: LaneItem): TurtlePhase => {
+    const t = (clock + item.phase) % TURTLE_CYCLE;
+    if (t >= TURTLE_VISIBLE) return "submerged";
+    return t >= TURTLE_VISIBLE - TURTLE_BLINK ? "blink" : "visible";
+  };
+
+  // The lane of a river or road row, or undefined for the safe rows.
+  const laneAt = (row: number) => lanes.find((l) => l.row === row);
+
+  // The log or visible turtle group under the frog centre, if any.
+  function supportAt(f: Frog): Lane | null {
+    const lane = laneAt(f.row);
+    if (!lane || lane.zone !== "river") return null;
+    const cx = f.col + 0.5;
+    const item = lane.items.find(
+      (it) => cx >= it.col && cx < it.col + lane.width,
+    );
+    if (!item) return null;
+    if (lane.kind === "turtle" && turtlePhase(item) === "submerged")
+      return null;
+    return lane;
+  }
+
+  // True when a vehicle of the frog's row overlaps its (shrunk) box.
+  function hitByVehicle(f: Frog): boolean {
+    const lane = laneAt(f.row);
+    if (!lane || lane.zone !== "road") return false;
+    const l = f.col + VEHICLE_MARGIN;
+    const r = f.col + 1 - VEHICLE_MARGIN;
+    return lane.items.some((it) => r > it.col && l < it.col + lane.width);
+  }
+
+  function spawnFrog() {
+    frog = { col: START_COL, row: ROW_START };
+    facing = "up";
+    hop = null;
+    pending = null;
+    timer = roundTime(level);
+  }
+
+  // Costs a life; at 0 the game is over, otherwise the world pauses briefly.
+  function kill() {
+    marker = { col: frog.col, row: frog.row };
+    hop = null;
+    pending = null;
+    lives = Math.max(0, lives - 1);
+    if (lives === 0) {
+      over = true;
+      return;
+    }
+    deathT = DEATH_PAUSE;
+  }
+
+  // Frog lands on row 0: fill a free bay or die.
+  function landOnGoal() {
+    const cx = frog.col + 0.5;
+    const i = BAYS.findIndex((b) => cx >= b && cx < b + BAY_WIDTH);
+    if (i < 0 || bays[i]) {
+      kill();
+      return;
+    }
+    bays[i] = true;
+    score += POINTS_BAY + Math.floor(timer) * POINTS_TIME;
+    maxRow = ROW_START;
+    if (bays.every(Boolean)) {
+      score += POINTS_ROUND;
+      level += 1;
+      lanes = buildLanes(level);
+      bays = BAYS.map(() => false);
+    }
+    spawnFrog();
+  }
 
   // Starts a hop. Hops that would leave the board are ignored.
   function startHop(dir: Dir) {
@@ -71,6 +153,8 @@ export function createGame() {
       score += (maxRow - frog.row) * POINTS_ROW;
       maxRow = frog.row;
     }
+    if (frog.row === ROW_GOALS) landOnGoal();
+    else if (laneAt(frog.row)?.zone === "river" && !supportAt(frog)) kill();
   }
 
   // Moves every lane item along its lane; items re-enter from the opposite side.
@@ -97,6 +181,8 @@ export function createGame() {
       timer = roundTime(level);
       clock = 0;
       over = false;
+      deathT = 0;
+      marker = null;
       facing = "up";
       hop = null;
       pending = null;
@@ -104,7 +190,7 @@ export function createGame() {
     },
     // One key press = one hop. While hopping, one extra press is buffered.
     turn(dir: Dir) {
-      if (over) return;
+      if (over || deathT > 0) return; // input is ignored while the world is frozen
       if (hop) {
         if (pending === null) pending = dir;
         return;
@@ -117,13 +203,56 @@ export function createGame() {
     // `dt` in seconds.
     update(dt: number) {
       if (over) return;
+
+      // Post-death pause: the world is frozen, then the frog respawns.
+      if (deathT > 0) {
+        deathT -= dt;
+        if (deathT <= 0) {
+          deathT = 0;
+          marker = null;
+          spawnFrog();
+        }
+        return;
+      }
+
       clock += dt;
       advanceLanes(dt);
+
+      // A log or turtle group carries the frog (and its hop target) sideways.
+      const carrier = supportAt(frog);
+      if (carrier) {
+        const d = carrier.dir * carrier.speed * dt;
+        frog.col += d;
+        if (hop) {
+          hop.fromCol += d;
+          hop.toCol += d;
+        }
+      } else if (!hop && laneAt(frog.row)?.zone === "river") {
+        kill(); // standing in the water, or the turtle sank under the frog
+        return;
+      }
+      const cx = frog.col + 0.5;
+      if (cx < 0 || cx > COLS) {
+        kill(); // carried off the edge of the board
+        return;
+      }
+      if (hitByVehicle(frog)) {
+        kill();
+        return;
+      }
+
+      timer -= dt;
+      if (timer <= 0) {
+        timer = 0;
+        kill();
+        return;
+      }
+
       if (hop) {
         hop.t += dt;
         if (hop.t >= HOP_MS / 1000) {
           land();
-          if (pending) {
+          if (!over && deathT === 0 && pending) {
             const next = pending;
             pending = null;
             startHop(next);
@@ -131,17 +260,15 @@ export function createGame() {
         }
       }
     },
-    // Turtle group state from the global clock and the group's phase offset.
-    turtlePhase(item: LaneItem): TurtlePhase {
-      const t = (clock + item.phase) % TURTLE_CYCLE;
-      if (t >= TURTLE_VISIBLE) return "submerged";
-      return t >= TURTLE_VISIBLE - TURTLE_BLINK ? "blink" : "visible";
-    },
+    turtlePhase,
     get lanes() {
       return lanes;
     },
     get frog() {
       return frog;
+    },
+    get marker() {
+      return marker;
     },
     get hop() {
       return hop;
