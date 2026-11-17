@@ -389,6 +389,18 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     c.restore();
   }
 
+  function paintRect(
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    color: string,
+  ) {
+    ctx.beginPath();
+    ctx.rect(x, y, w, h);
+    paint(color);
+  }
+
   // Corner radius: retro is all square corners.
   const rad = (r: number) => (pal.style === "retro" ? 0 : r);
 
@@ -527,13 +539,16 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     }
   }
 
-  // Car and truck are split into body paths (added to the current path) and
-  // details (windshield, wheels), so neon can batch all bodies of one color.
-  function carBody(x: number, y: number, w: number) {
+  function drawCar(
+    x: number,
+    y: number,
+    w: number,
+    dir: 1 | -1,
+    variant: number,
+  ) {
+    ctx.beginPath();
     ctx.roundRect(x + 3, y + 8, w - 6, CELL - 16, rad(5));
-  }
-
-  function carDetails(x: number, y: number, w: number, dir: 1 | -1) {
+    paint(pal.cars[variant % pal.cars.length]);
     // Windshield at the leading end.
     ctx.fillStyle = pal.windshield;
     const wx = dir === 1 ? x + w - 16 : x + 7;
@@ -552,22 +567,16 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     }
   }
 
-  const CAB_W = 20;
-
-  function truckBox(x: number, y: number, w: number, dir: 1 | -1) {
-    const boxX = dir === 1 ? x + 2 : x + CAB_W + 2;
-    ctx.rect(boxX, y + 6, w - CAB_W - 4, CELL - 12);
-  }
-
-  function truckCabPath(x: number, y: number, w: number, dir: 1 | -1) {
-    const cabX = dir === 1 ? x + w - CAB_W - 2 : x + 2;
-    ctx.roundRect(cabX, y + 8, CAB_W, CELL - 16, rad(4));
-  }
-
-  function truckDetails(x: number, y: number, w: number, dir: 1 | -1) {
-    const cabX = dir === 1 ? x + w - CAB_W - 2 : x + 2;
+  function drawTruck(x: number, y: number, w: number, dir: 1 | -1) {
+    const cabW = 20;
+    const cabX = dir === 1 ? x + w - cabW - 2 : x + 2;
+    const boxX = dir === 1 ? x + 2 : x + cabW + 2;
+    paintRect(boxX, y + 6, w - cabW - 4, CELL - 12, pal.truck);
+    ctx.beginPath();
+    ctx.roundRect(cabX, y + 8, cabW, CELL - 16, rad(4));
+    paint(pal.truckCab);
     ctx.fillStyle = pal.windshield;
-    ctx.fillRect(dir === 1 ? cabX + CAB_W - 7 : cabX + 2, y + 12, 5, CELL - 24);
+    ctx.fillRect(dir === 1 ? cabX + cabW - 7 : cabX + 2, y + 12, 5, CELL - 24);
     ctx.fillStyle = pal.wheel;
     for (const wxp of [x + 12, x + w / 2, x + w - 12]) {
       if (pal.style === "retro") {
@@ -579,81 +588,6 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
       ctx.arc(wxp, y + 6, 4, 0, Math.PI * 2);
       ctx.arc(wxp, y + CELL - 6, 4, 0, Math.PI * 2);
       ctx.fill();
-    }
-  }
-
-  function drawCar(
-    x: number,
-    y: number,
-    w: number,
-    dir: 1 | -1,
-    variant: number,
-  ) {
-    ctx.beginPath();
-    carBody(x, y, w);
-    paint(pal.cars[variant % pal.cars.length]);
-    carDetails(x, y, w, dir);
-  }
-
-  function drawTruck(x: number, y: number, w: number, dir: 1 | -1) {
-    ctx.beginPath();
-    truckBox(x, y, w, dir);
-    paint(pal.truck);
-    ctx.beginPath();
-    truckCabPath(x, y, w, dir);
-    paint(pal.truckCab);
-    truckDetails(x, y, w, dir);
-  }
-
-  // Neon road: one path and one glowing stroke per color group instead of one
-  // per vehicle; details are drawn afterwards.
-  function drawRoadNeon() {
-    const lanes = game.lanes;
-    const nCars = pal.cars.length;
-    for (let v = 0; v < nCars; v++) {
-      ctx.beginPath();
-      let any = false;
-      for (const lane of lanes) {
-        if (lane.kind !== "car") continue;
-        const y = px(lane.row);
-        const w = px(lane.width);
-        for (const item of lane.items) {
-          if (item.variant % nCars !== v) continue;
-          const x = px(item.col);
-          if (x + w < 0 || x > W) continue;
-          carBody(x, y, w);
-          any = true;
-        }
-      }
-      if (any) paint(pal.cars[v]);
-    }
-    for (let part = 0; part < 2; part++) {
-      ctx.beginPath();
-      let any = false;
-      for (const lane of lanes) {
-        if (lane.kind !== "truck") continue;
-        const y = px(lane.row);
-        const w = px(lane.width);
-        for (const item of lane.items) {
-          const x = px(item.col);
-          if (x + w < 0 || x > W) continue;
-          if (part === 0) truckBox(x, y, w, lane.dir);
-          else truckCabPath(x, y, w, lane.dir);
-          any = true;
-        }
-      }
-      if (any) paint(part === 0 ? pal.truck : pal.truckCab);
-    }
-    for (const lane of lanes) {
-      if (lane.kind !== "car" && lane.kind !== "truck") continue;
-      const y = px(lane.row);
-      const w = px(lane.width);
-      for (const item of lane.items) {
-        const x = px(item.col);
-        if (x + w < 0 || x > W) continue;
-        if (lane.kind === "car") carDetails(x, y, w, lane.dir);
-        else truckDetails(x, y, w, lane.dir);
-      }
     }
   }
 
@@ -711,10 +645,7 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
   }
 
   function drawLanes() {
-    const neon = pal.style === "neon";
-    if (neon) drawRoadNeon();
     for (const lane of game.lanes) {
-      if (neon && (lane.kind === "car" || lane.kind === "truck")) continue;
       const y = px(lane.row);
       for (const item of lane.items) {
         const x = px(item.col);
