@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Arcade Vault: online games platform where players compete for the highest score. The UI copy and the README are in Spanish; code, comments, specs and commits are in English. Four games are playable today (`asteroids`, `tetris`, `arkanoid`, `snake`), each with a real leaderboard in Supabase. Auth is still mock.
+Arcade Vault: online games platform where players compete for the highest score. The UI copy and the README are in Spanish; code, comments, specs and commits are in English. Five games are playable today (`asteroids`, `tetris`, `arkanoid`, `snake`, `frogger`), each with a real leaderboard in Supabase. Auth is still mock.
 
-The project follows Spec Driven Design: every feature starts as a spec in `specs/NN-<slug>.md` (01–09 so far, all `Implemented`) and is then implemented step by step.
+The project follows Spec Driven Design: every feature starts as a spec in `specs/NN-<slug>.md` (01–12 so far; 01–11 `Implemented`) and is then implemented step by step.
 
 ## Commands
 
@@ -57,6 +57,7 @@ The project follows Spec Driven Design: every feature starts as a spec in `specs
 | `tetris`    | 07   | 2            | 450×600, "next piece" in a side strip                    | lines (`number`), level (`pad2`) |
 | `arkanoid`  | 08   | 3            | spritesheet, keyboard + mouse, level data in `levels.ts` | lives (`hearts`), level (`pad2`) |
 | `snake`     | 09   | 4            | apple sprite (`fruits.png`), keyboard                    | length (`number`)                |
+| `frogger`   | 12   | 5            | 640×560, primitives only, lane data in `levels.ts`, keyboard | lives (`hearts`), level (`pad2`) |
 
 Game engine pattern (SPEC 05):
 
