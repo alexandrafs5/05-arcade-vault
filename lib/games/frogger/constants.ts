@@ -1,3 +1,5 @@
+import type { SkinId } from "../skins";
+
 // Frogger constants. 16x14 board, discrete hops, road + river + 5 goal bays.
 
 export const COLS = 16;
@@ -78,6 +80,11 @@ export const DIR_VEC: Record<Dir, { col: number; row: number }> = {
 };
 
 export type Palette = {
+  // Style flags.
+  style: SkinId; // shapes: classic = round, neon = glowing outlines, retro = flat blocks
+  glow: number; // shadowBlur for neon outlines, 0 = none
+  dashWidth: number; // road lane divider thickness
+  windshield: string;
   road: string;
   roadDash: string;
   river: string;
@@ -106,7 +113,11 @@ export type Palette = {
   timerLow: string;
 };
 
-export const COLORS: Palette = {
+const CLASSIC: Palette = {
+  style: "classic",
+  glow: 0,
+  dashWidth: 2,
+  windshield: "rgba(0, 0, 0, 0.45)",
   road: "#1b1b22",
   roadDash: "rgba(255, 255, 255, 0.35)",
   river: "#0b2a5b",
@@ -133,4 +144,78 @@ export const COLORS: Palette = {
   timerOk: "#2fd95a",
   timerWarn: "#f2c230",
   timerLow: "#e0332b",
+};
+
+// Near-black, site colors, glowing outlines over a faint tinted fill.
+const NEON: Palette = {
+  style: "neon",
+  glow: 14,
+  dashWidth: 2,
+  windshield: "rgba(5, 5, 12, 0.8)",
+  road: "#05050c",
+  roadDash: "rgba(0, 245, 255, 0.35)",
+  river: "#080a24",
+  riverWave: "rgba(0, 245, 255, 0.28)",
+  safe: "#071510",
+  safeEdge: "#00ff88",
+  bay: "#00ff88",
+  bayBorder: "#00ff88",
+  wall: "#0a0a18",
+  frog: "#00ff88",
+  frogDark: "#00ff88",
+  eyeWhite: "#ffffff",
+  eyePupil: "#05050c",
+  log: "#00f5ff",
+  logGrain: "rgba(0, 245, 255, 0.55)",
+  turtle: "#00f5ff",
+  turtleShell: "#00f5ff",
+  turtleGhost: "rgba(0, 245, 255, 0.3)",
+  cars: ["#ff006e", "#f5ff00", "#ff006e"],
+  truck: "#ff006e",
+  truckCab: "#ff7ab0",
+  wheel: "#05050c",
+  marker: "#ff006e",
+  timerOk: "#00ff88",
+  timerWarn: "#f5ff00",
+  timerLow: "#ff006e",
+};
+
+// Phosphor green and amber, flat fills, square blocks, no glow.
+const RETRO: Palette = {
+  style: "retro",
+  glow: 0,
+  dashWidth: 4,
+  windshield: "#07130a",
+  road: "#07130a",
+  roadDash: "#b87400",
+  river: "#0a2f33",
+  riverWave: "rgba(47, 122, 52, 0.55)",
+  safe: "#2f7a34",
+  safeEdge: "#7dff7a",
+  bay: "#07130a",
+  bayBorder: "#ffb000",
+  wall: "#2f7a34",
+  frog: "#d9ffd0",
+  frogDark: "#7dff7a",
+  eyeWhite: "#07130a",
+  eyePupil: "#d9ffd0",
+  log: "#b87400",
+  logGrain: "#07130a",
+  turtle: "#4fb85a",
+  turtleShell: "#2f7a34",
+  turtleGhost: "rgba(79, 184, 90, 0.4)",
+  cars: ["#ffb000", "#d9ffd0", "#ffb000"],
+  truck: "#b87400",
+  truckCab: "#ffb000",
+  wheel: "#07130a",
+  marker: "#ffb000",
+  timerOk: "#7dff7a",
+  timerWarn: "#ffb000",
+  timerLow: "#ffb000",
+};
+
+export const PALETTES: Record<SkinId, Palette> = {
+  classic: CLASSIC,
+  neon: NEON,
+  retro: RETRO,
 };

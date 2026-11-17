@@ -3,7 +3,7 @@ import {
   BAYS,
   BAY_WIDTH,
   CELL,
-  COLORS,
+  PALETTES,
   COLS,
   DEATH_PAUSE,
   DIR_VEC,
@@ -312,7 +312,8 @@ function createGame() {
   };
 }
 
-export const createEngine: CreateEngine = (canvas, cb) => {
+export const createEngine: CreateEngine = (canvas, cb, opts) => {
+  let pal = PALETTES[opts?.skin ?? "classic"];
   canvas.width = W;
   canvas.height = H;
 
@@ -348,15 +349,74 @@ export const createEngine: CreateEngine = (canvas, cb) => {
 
   const px = (cells: number) => cells * CELL;
 
+  // Fills the current path. Classic and retro: flat fill. Neon: faint tinted fill
+  // plus a glowing outline; the shadow is scoped by save/restore so it never leaks.
+  function paint(color: string) {
+    if (pal.style === "neon") {
+      ctx.save();
+      ctx.globalAlpha = 0.22;
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.restore();
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = pal.glow;
+      ctx.stroke();
+      ctx.restore();
+    } else {
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+  }
+
+  // Strokes the current path with glow in neon, plain otherwise.
+  function strokeGlow(color: string, width: number) {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    if (pal.glow > 0) {
+      ctx.shadowColor = color;
+      ctx.shadowBlur = pal.glow;
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function paintRect(
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    color: string,
+  ) {
+    ctx.beginPath();
+    ctx.rect(x, y, w, h);
+    paint(color);
+  }
+
+  // Corner radius: retro is all square corners.
+  const rad = (r: number) => (pal.style === "retro" ? 0 : r);
+
   function drawBackground() {
+    const retro = pal.style === "retro";
     // Goal row: walls, with the bays drawn on top.
-    ctx.fillStyle = COLORS.wall;
+    ctx.fillStyle = pal.wall;
     ctx.fillRect(0, 0, W, px(1));
     for (let r = ROW_RIVER_TOP; r <= ROW_RIVER_BOT; r++) {
-      ctx.fillStyle = COLORS.river;
+      ctx.fillStyle = pal.river;
       ctx.fillRect(0, px(r), W, CELL);
-      // Faint waves.
-      ctx.strokeStyle = COLORS.riverWave;
+      // Faint waves (retro: pixel dashes).
+      if (retro) {
+        ctx.fillStyle = pal.riverWave;
+        for (let x = (r % 2) * 20; x < W; x += 80) {
+          ctx.fillRect(x, px(r) + 8, 16, 4);
+          ctx.fillRect(x + 40, px(r) + 28, 16, 4);
+        }
+        continue;
+      }
+      ctx.strokeStyle = pal.riverWave;
       ctx.lineWidth = 2;
       ctx.beginPath();
       for (let x = (r % 2) * 20; x < W; x += 80) {
@@ -368,18 +428,26 @@ export const createEngine: CreateEngine = (canvas, cb) => {
       ctx.stroke();
     }
     for (const r of [ROW_MEDIAN, ROW_START]) {
-      ctx.fillStyle = COLORS.safe;
+      ctx.fillStyle = pal.safe;
       ctx.fillRect(0, px(r), W, CELL);
-      ctx.fillStyle = COLORS.safeEdge;
-      ctx.fillRect(0, px(r), W, 3);
+      if (pal.style === "neon") {
+        // Glowing green edge line instead of a flat strip.
+        ctx.beginPath();
+        ctx.moveTo(0, px(r) + 1.5);
+        ctx.lineTo(W, px(r) + 1.5);
+        strokeGlow(pal.safeEdge, 3);
+      } else {
+        ctx.fillStyle = pal.safeEdge;
+        ctx.fillRect(0, px(r), W, retro ? 4 : 3);
+      }
     }
     for (let r = ROW_ROAD_TOP; r <= ROW_ROAD_BOT; r++) {
-      ctx.fillStyle = COLORS.road;
+      ctx.fillStyle = pal.road;
       ctx.fillRect(0, px(r), W, CELL);
     }
     // Dashed lane dividers between road lanes.
-    ctx.strokeStyle = COLORS.roadDash;
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = pal.roadDash;
+    ctx.lineWidth = pal.dashWidth;
     ctx.setLineDash([16, 16]);
     ctx.beginPath();
     for (let r = ROW_ROAD_TOP + 1; r <= ROW_ROAD_BOT; r++) {
@@ -401,8 +469,25 @@ export const createEngine: CreateEngine = (canvas, cb) => {
       left: -Math.PI / 2,
     }[dir];
     ctx.rotate(angle);
+    if (pal.style === "retro") {
+      // Blocky pixel frog.
+      ctx.fillStyle = pal.frogDark;
+      for (const sx of [-1, 1]) {
+        ctx.fillRect(sx * 14 * s - 4 * s, -14 * s, 8 * s, 10 * s);
+        ctx.fillRect(sx * 14 * s - 4 * s, 4 * s, 8 * s, 10 * s);
+      }
+      ctx.fillStyle = pal.frog;
+      ctx.fillRect(-10 * s, -12 * s, 20 * s, 26 * s);
+      for (const sx of [-1, 1]) {
+        ctx.fillStyle = pal.eyeWhite;
+        ctx.fillRect(sx * 6 * s - 3 * s, -12 * s, 6 * s, 6 * s);
+        ctx.fillStyle = pal.eyePupil;
+        ctx.fillRect(sx * 6 * s - 1 * s, -11 * s, 2 * s, 2 * s);
+      }
+      ctx.restore();
+      return;
+    }
     // Legs.
-    ctx.fillStyle = COLORS.frogDark;
     for (const sx of [-1, 1]) {
       ctx.beginPath();
       ctx.ellipse(sx * 13 * s, -8 * s, 4 * s, 7 * s, sx * 0.5, 0, Math.PI * 2);
@@ -415,20 +500,19 @@ export const createEngine: CreateEngine = (canvas, cb) => {
         0,
         Math.PI * 2,
       );
-      ctx.fill();
+      paint(pal.frogDark);
     }
     // Body.
-    ctx.fillStyle = COLORS.frog;
     ctx.beginPath();
     ctx.ellipse(0, 0, 12 * s, 14 * s, 0, 0, Math.PI * 2);
-    ctx.fill();
+    paint(pal.frog);
     // Eyes.
     for (const sx of [-1, 1]) {
-      ctx.fillStyle = COLORS.eyeWhite;
+      ctx.fillStyle = pal.eyeWhite;
       ctx.beginPath();
       ctx.arc(sx * 6 * s, -10 * s, 4 * s, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = COLORS.eyePupil;
+      ctx.fillStyle = pal.eyePupil;
       ctx.beginPath();
       ctx.arc(sx * 6 * s, -11 * s, 1.8 * s, 0, Math.PI * 2);
       ctx.fill();
@@ -440,11 +524,11 @@ export const createEngine: CreateEngine = (canvas, cb) => {
     for (let i = 0; i < BAYS.length; i++) {
       const x = px(BAYS[i]);
       const w = px(BAY_WIDTH);
-      ctx.fillStyle = COLORS.bay;
+      ctx.fillStyle = pal.style === "neon" ? pal.wall : pal.bay;
       ctx.fillRect(x + 2, 2, w - 4, CELL - 4);
-      ctx.strokeStyle = COLORS.bayBorder;
-      ctx.lineWidth = 3;
-      ctx.strokeRect(x + 2, 2, w - 4, CELL - 4);
+      ctx.beginPath();
+      ctx.rect(x + 2, 2, w - 4, CELL - 4);
+      strokeGlow(pal.bayBorder, pal.style === "retro" ? 4 : 3);
       if (game.bays[i]) drawFrogShape(x + w / 2, CELL / 2, "down", 1);
     }
   }
@@ -456,16 +540,20 @@ export const createEngine: CreateEngine = (canvas, cb) => {
     dir: 1 | -1,
     variant: number,
   ) {
-    ctx.fillStyle = COLORS.cars[variant % COLORS.cars.length];
     ctx.beginPath();
-    ctx.roundRect(x + 3, y + 8, w - 6, CELL - 16, 5);
-    ctx.fill();
+    ctx.roundRect(x + 3, y + 8, w - 6, CELL - 16, rad(5));
+    paint(pal.cars[variant % pal.cars.length]);
     // Windshield at the leading end.
-    ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
+    ctx.fillStyle = pal.windshield;
     const wx = dir === 1 ? x + w - 16 : x + 7;
     ctx.fillRect(wx, y + 12, 9, CELL - 24);
-    ctx.fillStyle = COLORS.wheel;
+    ctx.fillStyle = pal.wheel;
     for (const wxp of [x + 8, x + w - 8]) {
+      if (pal.style === "retro") {
+        ctx.fillRect(wxp - 4, y + 4, 8, 6);
+        ctx.fillRect(wxp - 4, y + CELL - 10, 8, 6);
+        continue;
+      }
       ctx.beginPath();
       ctx.arc(wxp, y + 8, 4, 0, Math.PI * 2);
       ctx.arc(wxp, y + CELL - 8, 4, 0, Math.PI * 2);
@@ -477,16 +565,19 @@ export const createEngine: CreateEngine = (canvas, cb) => {
     const cabW = 20;
     const cabX = dir === 1 ? x + w - cabW - 2 : x + 2;
     const boxX = dir === 1 ? x + 2 : x + cabW + 2;
-    ctx.fillStyle = COLORS.truck;
-    ctx.fillRect(boxX, y + 6, w - cabW - 4, CELL - 12);
-    ctx.fillStyle = COLORS.truckCab;
+    paintRect(boxX, y + 6, w - cabW - 4, CELL - 12, pal.truck);
     ctx.beginPath();
-    ctx.roundRect(cabX, y + 8, cabW, CELL - 16, 4);
-    ctx.fill();
-    ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
+    ctx.roundRect(cabX, y + 8, cabW, CELL - 16, rad(4));
+    paint(pal.truckCab);
+    ctx.fillStyle = pal.windshield;
     ctx.fillRect(dir === 1 ? cabX + cabW - 7 : cabX + 2, y + 12, 5, CELL - 24);
-    ctx.fillStyle = COLORS.wheel;
+    ctx.fillStyle = pal.wheel;
     for (const wxp of [x + 12, x + w / 2, x + w - 12]) {
+      if (pal.style === "retro") {
+        ctx.fillRect(wxp - 4, y + 2, 8, 6);
+        ctx.fillRect(wxp - 4, y + CELL - 8, 8, 6);
+        continue;
+      }
       ctx.beginPath();
       ctx.arc(wxp, y + 6, 4, 0, Math.PI * 2);
       ctx.arc(wxp, y + CELL - 6, 4, 0, Math.PI * 2);
@@ -495,11 +586,10 @@ export const createEngine: CreateEngine = (canvas, cb) => {
   }
 
   function drawLog(x: number, y: number, w: number) {
-    ctx.fillStyle = COLORS.log;
     ctx.beginPath();
-    ctx.roundRect(x + 2, y + 6, w - 4, CELL - 12, 8);
-    ctx.fill();
-    ctx.strokeStyle = COLORS.logGrain;
+    ctx.roundRect(x + 2, y + 6, w - 4, CELL - 12, rad(8));
+    paint(pal.log);
+    ctx.strokeStyle = pal.logGrain;
     ctx.lineWidth = 2;
     ctx.beginPath();
     for (let gx = x + 14; gx < x + w - 10; gx += 22) {
@@ -510,27 +600,34 @@ export const createEngine: CreateEngine = (canvas, cb) => {
   }
 
   function drawTurtles(x: number, y: number, count: number, phase: string) {
+    const retro = pal.style === "retro";
     for (let i = 0; i < count; i++) {
       const cx = x + i * CELL + CELL / 2;
       const cy = y + CELL / 2;
       if (phase === "submerged") {
-        ctx.strokeStyle = COLORS.turtleGhost;
+        ctx.strokeStyle = pal.turtleGhost;
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(cx, cy, 13, 0, Math.PI * 2);
+        if (retro) ctx.rect(cx - 12, cy - 12, 24, 24);
+        else ctx.arc(cx, cy, 13, 0, Math.PI * 2);
         ctx.stroke();
         continue;
       }
       if (phase === "blink" && !blinkOn) continue;
-      ctx.fillStyle = COLORS.turtle;
+      if (retro) {
+        ctx.fillStyle = pal.turtle;
+        ctx.fillRect(cx - 14, cy - 14, 28, 28);
+        ctx.fillStyle = pal.turtleShell;
+        ctx.fillRect(cx - 8, cy - 8, 16, 16);
+        continue;
+      }
       ctx.beginPath();
       ctx.arc(cx, cy, 15, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = COLORS.turtleShell;
+      paint(pal.turtle);
       ctx.beginPath();
       ctx.arc(cx, cy, 10, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = COLORS.turtle;
+      paint(pal.turtleShell);
+      ctx.strokeStyle = pal.turtle;
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(cx - 10, cy);
@@ -562,15 +659,13 @@ export const createEngine: CreateEngine = (canvas, cb) => {
       // Death marker where the frog died.
       const cx = px(m.col) + CELL / 2;
       const cy = px(m.row) + CELL / 2;
-      ctx.strokeStyle = COLORS.marker;
-      ctx.lineWidth = 5;
-      ctx.lineCap = "round";
+      ctx.lineCap = pal.style === "retro" ? "butt" : "round";
       ctx.beginPath();
       ctx.moveTo(cx - 12, cy - 12);
       ctx.lineTo(cx + 12, cy + 12);
       ctx.moveTo(cx + 12, cy - 12);
       ctx.lineTo(cx - 12, cy + 12);
-      ctx.stroke();
+      strokeGlow(pal.marker, 5);
       ctx.lineCap = "butt";
       return;
     }
@@ -591,11 +686,7 @@ export const createEngine: CreateEngine = (canvas, cb) => {
   function drawTimer() {
     const ratio = Math.max(0, game.timer / roundTime(game.level));
     ctx.fillStyle =
-      ratio > 0.5
-        ? COLORS.timerOk
-        : ratio > 0.25
-          ? COLORS.timerWarn
-          : COLORS.timerLow;
+      ratio > 0.5 ? pal.timerOk : ratio > 0.25 ? pal.timerWarn : pal.timerLow;
     ctx.fillRect(0, H - 8, W * ratio, 8);
   }
 
@@ -657,6 +748,10 @@ export const createEngine: CreateEngine = (canvas, cb) => {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("blur", clearInput);
       clearInput();
+    },
+    setSkin(skin) {
+      pal = PALETTES[skin];
+      if (paused) draw(); // the loop keeps drawing, this just repaints at once
     },
     setPaused(p) {
       paused = p;

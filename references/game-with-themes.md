@@ -1,6 +1,6 @@
 # Games with skins
 
-Last update: 2026-11-16
+Last update: 2026-11-17
 
 Every game must offer three skins. They are applied one game at a time by `@skin-designer`, only to the game the user names. This file is owned and edited by that agent.
 
@@ -16,6 +16,7 @@ Each skin must look good on the dark site. The player picks the skin in the HUD 
 | `arkanoid`  | ✓       | ✓    | ✓     | `skins-arkanoid`  | 2026-11-16 |
 | `snake`     | ✓       | ✓    | ✓     | `skins-snake`     | 2026-11-16 |
 | `tetris`    | ✓       | ✓    | ✓     | `skins-tetris`    | 2026-11-16 |
+| `frogger`   | ✓       | ✓    | ✓     | `skins-frogger`   | 2026-11-17 |
 
 ## Notes per game
 
@@ -46,3 +47,10 @@ Each skin must look good on the dark site. The player picks the skin in the HUD 
 - neon: #05050c bg, site-color pieces (cyan, yellow, magenta, green, orange, blue, violet, white) as glowing outlines over a faint tinted fill, shadowBlur 12, cyan divider and label.
 - retro: dark green bg, amber / pale / phosphor / mid green flat blocks with a hollow core, 2px gaps, outline-only ghost, no glow.
 - Technique: pure vector redraw via `drawBlock(ctx, pal, ...)` with `Palette.blockStyle`; no sprites.
+
+### frogger
+
+- classic: blue river, grey road, brown logs, round green turtles, red/yellow/blue cars (verbatim).
+- neon: near-black road and river, cyan logs and turtles, magenta/yellow vehicles, green glowing frog and bays, shadowBlur 14.
+- retro: dark-green road, teal river, flat amber/dark-amber vehicles and logs, mid-green square turtles, pale blocky frog, pixel wave dashes, no glow.
+- Technique: pure vector redraw; `paint()` helper gives flat fill (classic, retro) or tinted fill plus glowing outline (neon); `Palette.style` switches retro to square corners and rect-based frog, turtles and wheels. No sprites.

@@ -67,6 +67,7 @@ const GAMES: Record<string, GameDefinition> = {
       { key: "lives", label: "Vidas", format: "hearts", initial: 3 },
       { key: "level", label: "Nivel", format: "pad2", initial: 1 },
     ],
+    skins: ["classic", "neon", "retro"],
   },
 };
 
