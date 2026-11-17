@@ -10,12 +10,12 @@ Every game must offer three skins. They are applied one game at a time by `@skin
 
 Each skin must look good on the dark site. The player picks the skin in the HUD of `/juegos/<id>/jugar`; the choice is saved per game in `localStorage` (`av_skin_<id>`).
 
-| Game        | classic | neon | retro | Branch | Date |
-| ----------- | ------- | ---- | ----- | ------ | ---- |
+| Game        | classic | neon | retro | Branch            | Date       |
+| ----------- | ------- | ---- | ----- | ----------------- | ---------- |
 | `asteroids` | ✓       | ✓    | ✓     | `skins-asteroids` | 2026-11-16 |
-| `tetris`    | —       | —    | —     | —      | —    |
-| `arkanoid`  | —       | —    | —     | —      | —    |
-| `snake`     | —       | —    | —     | —      | —    |
+| `tetris`    | —       | —    | —     | —                 | —          |
+| `arkanoid`  | ✓       | ✓    | ✓     | `skins-arkanoid`  | 2026-11-16 |
+| `snake`     | —       | —    | —     | —                 | —          |
 
 ## Notes per game
 
@@ -25,3 +25,10 @@ Each skin must look good on the dark site. The player picks the skin in the HUD 
 - neon: near-black bg, cyan ship, magenta rocks, yellow bullets, green power-up, shadowBlur 14.
 - retro: dark green bg, phosphor-green rocks with flat dark-green fill, amber filled ship, 3px miter lines, square bullets and particles, no glow.
 - Technique: pure vector redraw, each entity draws with the active palette; no sprites.
+
+### arkanoid
+
+- classic: black bg, original spritesheet (verbatim).
+- neon: near-black bg, glowing outlined blocks in magenta/yellow/cyan/violet/pink/green, white paddle and ball, shadowBlur 14.
+- retro: dark green bg, flat blocks in orange/amber/green (no glow), pale phosphor paddle and square ball.
+- Technique: classic keeps the spritesheet; neon and retro skip it and redraw blocks, paddle and ball as vector rects from the palette (no new assets).

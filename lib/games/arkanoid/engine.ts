@@ -1,3 +1,4 @@
+import type { SkinId } from "../skins";
 import type { CreateEngine, EngineSnapshot, EngineState } from "../types";
 import {
   BALL_SIZE,
@@ -11,8 +12,8 @@ import {
   EXPLOSION_DURATION,
   EXPLOSION_FRAME_COUNT,
   EXPLOSION_FRAMES,
-  FALLBACK_COLORS,
   H,
+  PALETTES,
   PADDLE_BOUNCE_TOLERANCE,
   PADDLE_H,
   PADDLE_SPEED,
@@ -210,7 +211,8 @@ function createGame() {
 
 type SpriteStatus = "idle" | "loading" | "ready" | "error";
 
-export const createEngine: CreateEngine = (canvas, cb) => {
+export const createEngine: CreateEngine = (canvas, cb, opts) => {
+  let pal = PALETTES[opts?.skin ?? "classic"];
   const ctx = canvas.getContext("2d")!;
   canvas.width = W;
   canvas.height = H;
@@ -321,48 +323,98 @@ export const createEngine: CreateEngine = (canvas, cb) => {
     }
   }
 
+  // Vector redraw for neon/retro. Glow is reset after every draw.
+  function drawBlock(x: number, y: number, w: number, h: number, c: string) {
+    if (pal.style === "neon") {
+      ctx.shadowColor = c;
+      ctx.shadowBlur = pal.glow;
+      ctx.strokeStyle = c;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 2, y + 2, w - 4, h - 4);
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = "transparent";
+      const prev = ctx.globalAlpha;
+      ctx.globalAlpha = prev * 0.2;
+      ctx.fillStyle = c;
+      ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
+      ctx.globalAlpha = prev;
+    } else {
+      ctx.fillStyle = c;
+      ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
+    }
+  }
+
+  function drawSolid(x: number, y: number, w: number, h: number, c: string) {
+    ctx.fillStyle = c;
+    if (pal.style === "neon") {
+      ctx.shadowColor = c;
+      ctx.shadowBlur = pal.glow;
+    }
+    ctx.fillRect(x, y, w, h);
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = "transparent";
+  }
+
   function draw() {
-    ctx.fillStyle = "#000";
+    ctx.fillStyle = pal.bg;
     ctx.fillRect(0, 0, W, H);
     if (sheetStatus !== "ready" && sheetStatus !== "error") return;
+    const sprite = pal.style === "sprite";
 
     for (const b of game.blocks) {
-      if (b.alive)
+      if (!b.alive) continue;
+      if (sprite)
         drawSprite(
           SPRITES.blocks[b.color],
           b.x,
           b.y,
           b.w,
           b.h,
-          FALLBACK_COLORS[b.color],
+          pal.blocks[b.color],
         );
+      else drawBlock(b.x, b.y, b.w, b.h, pal.blocks[b.color]);
     }
 
     for (const e of game.explosions) {
-      const i = Math.min(
-        Math.floor((e.elapsed / EXPLOSION_DURATION) * EXPLOSION_FRAME_COUNT),
-        EXPLOSION_FRAME_COUNT - 1,
-      );
-      drawSprite(
-        EXPLOSION_FRAMES[e.color][i],
-        e.x,
-        e.y,
-        e.w,
-        e.h,
-        "rgba(255,255,255,0.6)",
-      );
+      const t = e.elapsed / EXPLOSION_DURATION;
+      if (sprite) {
+        const i = Math.min(
+          Math.floor(t * EXPLOSION_FRAME_COUNT),
+          EXPLOSION_FRAME_COUNT - 1,
+        );
+        drawSprite(
+          EXPLOSION_FRAMES[e.color][i],
+          e.x,
+          e.y,
+          e.w,
+          e.h,
+          pal.explosion,
+        );
+      } else if (pal.style === "neon") {
+        const g = t * 8;
+        ctx.globalAlpha = Math.max(0, 1 - t);
+        drawBlock(e.x - g, e.y - g, e.w + g * 2, e.h + g * 2, pal.explosion);
+        ctx.globalAlpha = 1;
+      } else if (Math.floor(t * 4) % 2 === 0) {
+        drawBlock(e.x, e.y, e.w, e.h, pal.explosion); // flat blink
+      }
     }
 
     const { paddle, ball } = game;
-    drawSprite(
-      SPRITES.paddle,
-      paddle.x,
-      paddle.y,
-      paddle.w,
-      paddle.h,
-      "#e8e8f0",
-    );
-    drawSprite(SPRITES.ball, ball.x, ball.y, ball.w, ball.h, "#ffffff");
+    if (sprite) {
+      drawSprite(
+        SPRITES.paddle,
+        paddle.x,
+        paddle.y,
+        paddle.w,
+        paddle.h,
+        pal.paddle,
+      );
+      drawSprite(SPRITES.ball, ball.x, ball.y, ball.w, ball.h, pal.ball);
+    } else {
+      drawSolid(paddle.x, paddle.y, paddle.w, paddle.h, pal.paddle);
+      drawSolid(ball.x, ball.y, ball.w, ball.h, pal.ball);
+    }
   }
 
   function frame(ts: number) {
@@ -411,6 +463,10 @@ export const createEngine: CreateEngine = (canvas, cb) => {
       paused = p;
       lastTime = null;
       clearInput();
+    },
+    setSkin(skin: SkinId) {
+      pal = PALETTES[skin];
+      if (paused) draw(); // repaint one frame; no state change
     },
     restart() {
       game.reset();
