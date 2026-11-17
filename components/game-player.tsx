@@ -3,13 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { GameCanvas } from "@/components/game-canvas";
+import { SkinPicker } from "@/components/skin-picker";
 import { TouchControls } from "@/components/touch-controls";
 import { fmtNumber } from "@/lib/format";
 import { getGameDefinition } from "@/lib/games/registry";
 import {
   DEFAULT_SKIN,
   isSkinId,
-  SKIN_LABELS,
   skinStorageKey,
   type SkinId,
 } from "@/lib/games/skins";
@@ -184,32 +184,7 @@ function Player({
           ))}
           {skins && (
             <div className="hud-stat">
-              <div className="l" id="skin-label">
-                Aspecto
-              </div>
-              <div
-                className="skin-picker"
-                role="radiogroup"
-                aria-labelledby="skin-label"
-              >
-                {skins.map((id) => (
-                  <button
-                    key={id}
-                    type="button"
-                    role="radio"
-                    aria-checked={skin === id}
-                    className={`skin-opt skin-${id}`}
-                    onClick={(e) => {
-                      pickSkin(id);
-                      // Keep Space/Enter free for the game after a click.
-                      e.currentTarget.blur();
-                    }}
-                  >
-                    <span className="skin-dot" aria-hidden="true" />
-                    {SKIN_LABELS[id]}
-                  </button>
-                ))}
-              </div>
+              <SkinPicker skins={skins} value={skin} onPick={pickSkin} />
             </div>
           )}
         </div>
@@ -242,7 +217,11 @@ function Player({
           {paused && (
             <div
               className="crt-content"
-              style={{ background: "rgba(0,0,0,0.6)", zIndex: 5 }}
+              style={{
+                background: "rgba(0,0,0,0.6)",
+                zIndex: 5,
+                pointerEvents: "auto",
+              }}
             >
               <div>
                 <div className="pixel neon-yellow" style={{ fontSize: 22 }}>
@@ -259,6 +238,14 @@ function Player({
                 >
                   PULSA REANUDAR PARA CONTINUAR
                 </div>
+                {skins && (
+                  <SkinPicker
+                    className="pause-skins"
+                    skins={skins}
+                    value={skin}
+                    onPick={pickSkin}
+                  />
+                )}
               </div>
             </div>
           )}

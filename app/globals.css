@@ -1103,6 +1103,46 @@ a {
   }
 }
 
+/* Pause-overlay skin picker (SPEC 13): touch only, because the HUD picker is
+   hidden there. Shown by CSS alone, like the touch pad. */
+.pause-skins {
+  display: none;
+}
+@media (pointer: coarse) {
+  .pause-skins {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+    padding: 0 12px;
+  }
+  .pause-skins .l {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-faint);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .pause-skins .skin-picker {
+    width: 100%;
+    max-width: 320px;
+    background: rgba(5, 5, 7, 0.78);
+  }
+  .pause-skins .skin-opt {
+    flex: 1 1 auto;
+    justify-content: center;
+    min-width: 0;
+    min-height: 44px;
+    padding: 0 10px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+  .pause-skins .skin-opt[aria-checked="true"] {
+    box-shadow: inset 0 -3px 0 var(--cyan);
+  }
+}
+
 .crt {
   position: relative;
   border-radius: 28px;
