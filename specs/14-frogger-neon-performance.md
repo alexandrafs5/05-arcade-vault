@@ -90,7 +90,7 @@ Conventions:
 ## Acceptance criteria
 
 - [ ] `scripts/perf/frame-cost.js` exists and, run through the Playwright MCP, prints one `n/avg/p95/max` line per game, skin and rate, with no manual edits.
-- [ ] Before the change the script reports frogger/neon avg ≥ 10 ms at 1× and ≥ 20 ms at 4× (the baseline reproduces).
+- [ ] Before the change the script reports frogger/neon as the slowest skin and avg ≥ 20 ms at 4× (the baseline reproduces). Measured 2026-11-17: neon 5.1 ms at 1×, 33.9 ms at 4×; the 1× value is machine-dependent.
 - [ ] After the change frogger/neon avg frame cost is < 8 ms at 4× CPU throttle and < 4 ms at 1×.
 - [ ] After the change frogger/neon p95 is < 16 ms at 4×.
 - [ ] After the change frogger/classic and frogger/retro avg frame cost is < 8 ms at 4× (classic baseline 9.3 ms) and not above baseline at 1×; output pixel-identical.

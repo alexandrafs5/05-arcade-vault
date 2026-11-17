@@ -372,16 +372,20 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
   }
 
   // Strokes the current path with glow in neon, plain otherwise.
-  function strokeGlow(color: string, width: number) {
-    ctx.save();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = width;
+  function strokeGlow(
+    color: string,
+    width: number,
+    c: CanvasRenderingContext2D = ctx,
+  ) {
+    c.save();
+    c.strokeStyle = color;
+    c.lineWidth = width;
     if (pal.glow > 0) {
-      ctx.shadowColor = color;
-      ctx.shadowBlur = pal.glow;
+      c.shadowColor = color;
+      c.shadowBlur = pal.glow;
     }
-    ctx.stroke();
-    ctx.restore();
+    c.stroke();
+    c.restore();
   }
 
   function paintRect(
