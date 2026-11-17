@@ -15,7 +15,7 @@ Each skin must look good on the dark site. The player picks the skin in the HUD 
 | `asteroids` | ✓       | ✓    | ✓     | `skins-asteroids` | 2026-11-16 |
 | `tetris`    | —       | —    | —     | —                 | —          |
 | `arkanoid`  | ✓       | ✓    | ✓     | `skins-arkanoid`  | 2026-11-16 |
-| `snake`     | —       | —    | —     | —                 | —          |
+| `snake`     | ✓       | ✓    | ✓     | `skins-snake`     | 2026-11-16 |
 
 ## Notes per game
 
@@ -32,3 +32,10 @@ Each skin must look good on the dark site. The player picks the skin in the HUD 
 - neon: near-black bg, glowing outlined blocks in magenta/yellow/cyan/violet/pink/green, white paddle and ball, shadowBlur 14.
 - retro: dark green bg, flat blocks in orange/amber/green (no glow), pale phosphor paddle and square ball.
 - Technique: classic keeps the spritesheet; neon and retro skip it and redraw blocks, paddle and ball as vector rects from the palette (no new assets).
+
+### snake
+
+- classic: lime-green checkerboard, blue snake, sprite apple (verbatim).
+- neon: near-black board with faint cyan grid, green glowing snake with cyan eyes, magenta glowing orb apple with yellow stem, shadowBlur 16.
+- retro: 5 colors, dark-green checkerboard, flat phosphor-green square blocks, amber pixel-art apple, square eyes, no glow.
+- Technique: apple sprite only in classic; neon and retro redraw the apple as vector shapes, so no tinting or new assets.

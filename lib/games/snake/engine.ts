@@ -2,12 +2,6 @@ import type { CreateEngine, EngineSnapshot, EngineState } from "../types";
 import {
   APPLE_SPRITE,
   CELL,
-  COLOR_APPLE_FALLBACK,
-  COLOR_BOARD_A,
-  COLOR_BOARD_B,
-  COLOR_EYE_PUPIL,
-  COLOR_EYE_WHITE,
-  COLOR_SNAKE,
   COLS,
   DIRS,
   FIRST_APPLE,
@@ -15,6 +9,7 @@ import {
   KEY_TO_DIR,
   MAX_QUEUED_TURNS,
   OPPOSITE,
+  PALETTES,
   ROWS,
   START_HEAD,
   START_LENGTH,
@@ -145,7 +140,8 @@ function createGame() {
   };
 }
 
-export const createEngine: CreateEngine = (canvas, cb) => {
+export const createEngine: CreateEngine = (canvas, cb, opts) => {
+  let pal = PALETTES[opts?.skin ?? "classic"];
   canvas.width = W;
   canvas.height = H;
 
@@ -205,9 +201,23 @@ export const createEngine: CreateEngine = (canvas, cb) => {
   function drawBoard() {
     for (let row = 0; row < ROWS; row++) {
       for (let col = 0; col < COLS; col++) {
-        ctx.fillStyle = (col + row) % 2 === 0 ? COLOR_BOARD_A : COLOR_BOARD_B;
+        ctx.fillStyle = (col + row) % 2 === 0 ? pal.boardA : pal.boardB;
         ctx.fillRect(col * CELL, row * CELL, CELL, CELL);
       }
+    }
+    if (pal.grid) {
+      ctx.strokeStyle = pal.grid;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let c = 0; c <= COLS; c++) {
+        ctx.moveTo(c * CELL + 0.5, 0);
+        ctx.lineTo(c * CELL + 0.5, H);
+      }
+      for (let r = 0; r <= ROWS; r++) {
+        ctx.moveTo(0, r * CELL + 0.5);
+        ctx.lineTo(W, r * CELL + 0.5);
+      }
+      ctx.stroke();
     }
   }
 
@@ -216,7 +226,28 @@ export const createEngine: CreateEngine = (canvas, cb) => {
     if (!a) return;
     const cx = a.col * CELL + CELL / 2;
     const cy = a.row * CELL + CELL / 2;
-    if (sheetStatus === "ready" && sheet) {
+    if (pal.appleStyle === "orb") {
+      ctx.shadowColor = pal.apple;
+      ctx.shadowBlur = pal.glow;
+      ctx.fillStyle = pal.apple;
+      ctx.beginPath();
+      ctx.arc(cx, cy, CELL * 0.32, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = "transparent";
+      ctx.fillStyle = pal.appleHighlight;
+      ctx.fillRect(cx - 2, cy - CELL * 0.46, 4, CELL * 0.16); // stem
+    } else if (pal.appleStyle === "pixel") {
+      const u = CELL / 9;
+      const ox = cx - 3.5 * u;
+      const oy = cy - 3.5 * u;
+      ctx.fillStyle = pal.apple;
+      ctx.fillRect(ox + u, oy + u, 5 * u, 6 * u);
+      ctx.fillRect(ox, oy + 2 * u, 7 * u, 4 * u);
+      ctx.fillStyle = pal.appleHighlight;
+      ctx.fillRect(ox + 1.5 * u, oy + 2 * u, u, u);
+      ctx.fillRect(ox + 3 * u, oy - u, u, 1.5 * u); // stem
+    } else if (sheetStatus === "ready" && sheet) {
       // Keep the sprite aspect ratio (110x160), centered in the cell.
       const h = CELL * 0.9;
       const w = (h * APPLE_SPRITE.w) / APPLE_SPRITE.h;
@@ -232,7 +263,7 @@ export const createEngine: CreateEngine = (canvas, cb) => {
         h,
       );
     } else {
-      ctx.fillStyle = COLOR_APPLE_FALLBACK;
+      ctx.fillStyle = pal.apple;
       ctx.beginPath();
       ctx.arc(cx, cy, CELL * 0.35, 0, Math.PI * 2);
       ctx.fill();
@@ -247,25 +278,36 @@ export const createEngine: CreateEngine = (canvas, cb) => {
     });
 
     // Body: one rounded line through the cell centers.
-    ctx.strokeStyle = COLOR_SNAKE;
-    ctx.lineWidth = CELL * 0.72;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.beginPath();
-    for (let i = 0; i < cells.length; i++) {
-      const c = center(i);
-      if (i === 0) ctx.moveTo(c.x, c.y);
-      else ctx.lineTo(c.x, c.y);
-    }
-    ctx.stroke();
-
-    // Head: slightly bigger, two eyes looking in the move direction.
+    ctx.shadowColor = pal.snake;
+    ctx.shadowBlur = pal.glow;
+    ctx.fillStyle = pal.snake;
+    ctx.strokeStyle = pal.snake;
     const h = center(0);
-    ctx.fillStyle = COLOR_SNAKE;
-    ctx.beginPath();
-    ctx.arc(h.x, h.y, CELL * 0.45, 0, Math.PI * 2);
-    ctx.fill();
+    if (pal.bodyStyle === "blocks") {
+      // Chunky flat squares, one per cell.
+      for (const c of cells) {
+        ctx.fillRect(c.col * CELL + 3, c.row * CELL + 3, CELL - 6, CELL - 6);
+      }
+    } else {
+      ctx.lineWidth = CELL * 0.72;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      for (let i = 0; i < cells.length; i++) {
+        const c = center(i);
+        if (i === 0) ctx.moveTo(c.x, c.y);
+        else ctx.lineTo(c.x, c.y);
+      }
+      ctx.stroke();
+      // Head: slightly bigger.
+      ctx.beginPath();
+      ctx.arc(h.x, h.y, CELL * 0.45, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = "transparent";
 
+    // Two eyes looking in the move direction.
     const d = DIRS[game.dir];
     const fx = d.col; // forward
     const fy = d.row;
@@ -274,11 +316,16 @@ export const createEngine: CreateEngine = (canvas, cb) => {
     for (const side of [-1, 1]) {
       const ex = h.x + fx * CELL * 0.12 + sx * side * CELL * 0.17;
       const ey = h.y + fy * CELL * 0.12 + sy * side * CELL * 0.17;
-      ctx.fillStyle = COLOR_EYE_WHITE;
+      ctx.fillStyle = pal.eyeWhite;
+      if (pal.eyeShape === "square") {
+        const r = CELL * 0.08;
+        ctx.fillRect(ex - r, ey - r, r * 2, r * 2);
+        continue;
+      }
       ctx.beginPath();
       ctx.arc(ex, ey, CELL * 0.11, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = COLOR_EYE_PUPIL;
+      ctx.fillStyle = pal.eyePupil;
       ctx.beginPath();
       ctx.arc(
         ex + fx * CELL * 0.04,
@@ -354,6 +401,11 @@ export const createEngine: CreateEngine = (canvas, cb) => {
         sheet = null;
         sheetStatus = "idle"; // reload on the next start()
       }
+    },
+    setSkin(skin) {
+      pal = PALETTES[skin];
+      if (paused && (sheetStatus === "ready" || sheetStatus === "error"))
+        draw();
     },
     setPaused(p) {
       paused = p;

@@ -48,6 +48,7 @@ const GAMES: Record<string, GameDefinition> = {
     width: SNAKE_W,
     height: SNAKE_H,
     hud: [{ key: "length", label: "Longitud", format: "number", initial: 3 }],
+    skins: ["classic", "neon", "retro"],
   },
 };
 
