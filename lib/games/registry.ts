@@ -6,6 +6,8 @@ import { createEngine as createArkanoid } from "./arkanoid/engine";
 import { H as ARKANOID_H, W as ARKANOID_W } from "./arkanoid/constants";
 import { createEngine as createSnake } from "./snake/engine";
 import { H as SNAKE_H, W as SNAKE_W } from "./snake/constants";
+import { createEngine as createFrogger } from "./frogger/engine";
+import { H as FROGGER_H, W as FROGGER_W } from "./frogger/constants";
 import type { GameDefinition } from "./types";
 
 // One entry per playable game. The key is the `games.id` slug.
@@ -55,6 +57,16 @@ const GAMES: Record<string, GameDefinition> = {
     height: SNAKE_H,
     hud: [{ key: "length", label: "Longitud", format: "number", initial: 3 }],
     skins: ["classic", "neon", "retro"],
+  },
+  frogger: {
+    id: "frogger",
+    createEngine: createFrogger,
+    width: FROGGER_W,
+    height: FROGGER_H,
+    hud: [
+      { key: "lives", label: "Vidas", format: "hearts", initial: 3 },
+      { key: "level", label: "Nivel", format: "pad2", initial: 1 },
+    ],
   },
 };
 
