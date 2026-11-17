@@ -12,11 +12,16 @@ Each skin must look good on the dark site. The player picks the skin in the HUD 
 
 | Game        | classic | neon | retro | Branch | Date |
 | ----------- | ------- | ---- | ----- | ------ | ---- |
-| `asteroids` | —       | —    | —     | —      | —    |
+| `asteroids` | ✓       | ✓    | ✓     | `skins-asteroids` | 2026-11-16 |
 | `tetris`    | —       | —    | —     | —      | —    |
 | `arkanoid`  | —       | —    | —     | —      | —    |
 | `snake`     | —       | —    | —     | —      | —    |
 
 ## Notes per game
 
-None yet.
+### asteroids
+
+- classic: black bg, white vectors, cyan power-up, orange flame (verbatim).
+- neon: near-black bg, cyan ship, magenta rocks, yellow bullets, green power-up, shadowBlur 14.
+- retro: dark green bg, phosphor-green rocks with flat dark-green fill, amber filled ship, 3px miter lines, square bullets and particles, no glow.
+- Technique: pure vector redraw, each entity draws with the active palette; no sprites.

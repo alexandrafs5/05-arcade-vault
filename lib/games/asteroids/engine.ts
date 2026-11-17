@@ -1,5 +1,6 @@
 import {
   H,
+  PALETTES,
   POWERUP_DROP_CHANCE,
   POWERUP_DURATION,
   W,
@@ -17,7 +18,8 @@ import {
 
 import type { CreateEngine, EngineSnapshot, EngineState } from "../types";
 
-export const createEngine: CreateEngine = (canvas, cb) => {
+export const createEngine: CreateEngine = (canvas, cb, opts) => {
+  let pal = PALETTES[opts?.skin ?? "classic"];
   const ctx = canvas.getContext("2d")!;
   canvas.width = W;
   canvas.height = H;
@@ -227,17 +229,17 @@ export const createEngine: CreateEngine = (canvas, cb) => {
 
   // ── Draw (world only; HUD and game-over overlay live in the React shell) ────
   function draw() {
-    ctx.fillStyle = "#000";
+    ctx.fillStyle = pal.bg;
     ctx.fillRect(0, 0, W, H);
 
-    particles.forEach((p) => p.draw(ctx));
-    asteroids.forEach((a) => a.draw(ctx));
-    powerUps.forEach((p) => p.draw(ctx));
-    bullets.forEach((b) => b.draw(ctx));
-    ship.draw(ctx);
+    particles.forEach((p) => p.draw(ctx, pal));
+    asteroids.forEach((a) => a.draw(ctx, pal));
+    powerUps.forEach((p) => p.draw(ctx, pal));
+    bullets.forEach((b) => b.draw(ctx, pal));
+    ship.draw(ctx, pal);
 
     if (ship.tripleShot > 0) {
-      ctx.fillStyle = "#0ff";
+      ctx.fillStyle = pal.text;
       ctx.font = "15px monospace";
       ctx.textAlign = "left";
       ctx.textBaseline = "alphabetic";
@@ -292,6 +294,10 @@ export const createEngine: CreateEngine = (canvas, cb) => {
     },
     restart() {
       initGame(); // score 0, lives 3, level 1
+    },
+    setSkin(skin) {
+      pal = PALETTES[skin];
+      draw(); // repaint one frame (the loop also repaints while paused)
     },
   };
 };

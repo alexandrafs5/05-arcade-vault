@@ -1,5 +1,6 @@
 import {
   H,
+  type Palette,
   POINTS,
   POWERUP_TTL,
   RADII,
@@ -38,11 +39,19 @@ export class Bullet {
     if (this.ttl <= 0) this.dead = true;
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
-    ctx.fillStyle = "#fff";
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fill();
+  draw(ctx: CanvasRenderingContext2D, pal: Palette) {
+    ctx.fillStyle = pal.bullet;
+    ctx.shadowColor = pal.bullet;
+    ctx.shadowBlur = pal.glow;
+    if (pal.square) {
+      const s = this.radius * 2 + 2;
+      ctx.fillRect(this.x - s / 2, this.y - s / 2, s, s);
+    } else {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
   }
 }
 
@@ -98,19 +107,26 @@ export class Asteroid {
     ];
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, pal: Palette) {
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.rot);
-    ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 1.5;
-    ctx.lineJoin = "round";
+    ctx.strokeStyle = pal.rock;
+    ctx.lineWidth = pal.lineWidth;
+    ctx.lineJoin = pal.square ? "miter" : "round";
+    ctx.shadowColor = pal.rock;
+    ctx.shadowBlur = pal.glow;
     ctx.beginPath();
     ctx.moveTo(this.verts[0][0], this.verts[0][1]);
     for (let i = 1; i < this.verts.length; i++)
       ctx.lineTo(this.verts[i][0], this.verts[i][1]);
     ctx.closePath();
+    if (pal.rockFill) {
+      ctx.fillStyle = pal.rockFill;
+      ctx.fill();
+    }
     ctx.stroke();
+    ctx.shadowBlur = 0;
     ctx.restore();
   }
 }
@@ -140,22 +156,25 @@ export class PowerUp {
     if (this.ttl <= 0) this.dead = true;
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, pal: Palette) {
     if (this.ttl < 2 && Math.floor(this.ttl * 8) % 2 === 0) return;
     const pulse = 0.85 + Math.sin(performance.now() / 150) * 0.15;
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(Math.PI / 4);
-    ctx.strokeStyle = "#0ff";
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = pal.power;
+    ctx.lineWidth = pal.square ? 3 : 2;
+    ctx.shadowColor = pal.power;
+    ctx.shadowBlur = pal.glow;
     const r = this.radius * pulse;
     ctx.strokeRect(-r, -r, r * 2, r * 2);
     ctx.restore();
-    ctx.fillStyle = "#0ff";
+    ctx.fillStyle = pal.power;
     ctx.font = "bold 12px monospace";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText("3x", this.x, this.y);
+    ctx.shadowBlur = 0;
   }
 }
 
@@ -225,7 +244,7 @@ export class Ship {
     return [new Bullet(ox, oy, this.angle)];
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, pal: Palette) {
     if (this.dead) return;
     // Blink during spawn invincibility
     if (this.invincible > 0 && Math.floor(this.invincible * 8) % 2 === 0)
@@ -234,9 +253,11 @@ export class Ship {
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
-    ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 1.5;
-    ctx.lineJoin = "round";
+    ctx.strokeStyle = pal.ship;
+    ctx.lineWidth = pal.lineWidth;
+    ctx.lineJoin = pal.square ? "miter" : "round";
+    ctx.shadowColor = pal.ship;
+    ctx.shadowBlur = pal.glow;
 
     // Classic silhouette: triangle with rear notch
     ctx.beginPath();
@@ -245,6 +266,10 @@ export class Ship {
     ctx.lineTo(-7, 0); // rear notch
     ctx.lineTo(-12, 9); // right wing
     ctx.closePath();
+    if (pal.shipFill) {
+      ctx.fillStyle = pal.shipFill;
+      ctx.fill();
+    }
     ctx.stroke();
 
     // Thruster flame
@@ -253,9 +278,11 @@ export class Ship {
       ctx.moveTo(-8, -4);
       ctx.lineTo(-8 - rand(6, 14), 0);
       ctx.lineTo(-8, 4);
-      ctx.strokeStyle = "rgba(255, 130, 0, 0.85)";
+      ctx.strokeStyle = pal.flame;
+      ctx.shadowColor = pal.flame;
       ctx.stroke();
     }
+    ctx.shadowBlur = 0;
 
     ctx.restore();
   }
@@ -288,13 +315,23 @@ export class Particle {
     if (this.ttl <= 0) this.dead = true;
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, pal: Palette) {
     const alpha = this.ttl / this.life;
-    ctx.strokeStyle = `rgba(255,255,255,${alpha.toFixed(2)})`;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(this.x, this.y);
-    ctx.lineTo(this.x - this.vx * 0.05, this.y - this.vy * 0.05);
-    ctx.stroke();
+    ctx.globalAlpha = alpha;
+    if (pal.square) {
+      ctx.fillStyle = pal.particle;
+      ctx.fillRect(Math.round(this.x) - 2, Math.round(this.y) - 2, 4, 4);
+    } else {
+      ctx.strokeStyle = pal.particle;
+      ctx.lineWidth = 1;
+      ctx.shadowColor = pal.particle;
+      ctx.shadowBlur = pal.glow;
+      ctx.beginPath();
+      ctx.moveTo(this.x, this.y);
+      ctx.lineTo(this.x - this.vx * 0.05, this.y - this.vy * 0.05);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+    ctx.globalAlpha = 1;
   }
 }
