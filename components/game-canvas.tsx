@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { DEFAULT_SKIN, type SkinId } from "@/lib/games/skins";
 import type { Engine, EngineSnapshot, GameDefinition } from "@/lib/games/types";
 
 type Props = {
   definition: GameDefinition;
+  skin?: SkinId;
   paused: boolean;
   restartKey: number;
   onChange: (s: EngineSnapshot) => void;
@@ -13,6 +15,7 @@ type Props = {
 
 export function GameCanvas({
   definition,
+  skin = DEFAULT_SKIN,
   paused,
   restartKey,
   onChange,
@@ -20,6 +23,7 @@ export function GameCanvas({
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<Engine | null>(null);
+  const skinRef = useRef(skin);
   const pausedRef = useRef(paused);
   const onChangeRef = useRef(onChange);
   const onGameOverRef = useRef(onGameOver);
@@ -27,6 +31,7 @@ export function GameCanvas({
 
   // Keep the latest callbacks and pause state without recreating the engine.
   useEffect(() => {
+    skinRef.current = skin;
     pausedRef.current = paused;
     onChangeRef.current = onChange;
     onGameOverRef.current = onGameOver;
@@ -35,10 +40,14 @@ export function GameCanvas({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const engine = definition.createEngine(canvas, {
-      onChange: (s) => onChangeRef.current(s),
-      onGameOver: (finalScore) => onGameOverRef.current(finalScore),
-    });
+    const engine = definition.createEngine(
+      canvas,
+      {
+        onChange: (s) => onChangeRef.current(s),
+        onGameOver: (finalScore) => onGameOverRef.current(finalScore),
+      },
+      { skin: skinRef.current },
+    );
     engineRef.current = engine;
     engine.setPaused(pausedRef.current);
     engine.start();
@@ -51,6 +60,10 @@ export function GameCanvas({
   useEffect(() => {
     engineRef.current?.setPaused(paused);
   }, [paused]);
+
+  useEffect(() => {
+    engineRef.current?.setSkin?.(skin);
+  }, [skin]);
 
   useEffect(() => {
     if (lastRestartKey.current === restartKey) return;

@@ -1,3 +1,5 @@
+import type { SkinId } from "../skins";
+
 // Arkanoid constants. Names and values come from references/started-games/04-arkanoid/.
 // Movement is time-based (px/s). The engine caps dt at 0.05 s (new vs. the original).
 
@@ -85,4 +87,60 @@ export const EXPLOSION_FRAMES: Record<BlockColor, Rect[]> = {
   yellow: explosionRow(240),
   hotpink: explosionRow(256),
   gray: explosionRow(176),
+};
+
+export type Palette = {
+  style: "sprite" | "neon" | "flat"; // sprite = spritesheet, others = vector redraw
+  bg: string;
+  blocks: Record<BlockColor, string>; // block colors (also the sprite fallback)
+  explosion: string; // sprite fallback / vector flash color
+  paddle: string;
+  ball: string;
+  glow: number; // shadowBlur in px; 0 = no glow
+};
+
+export const PALETTES: Record<SkinId, Palette> = {
+  classic: {
+    style: "sprite",
+    bg: "#000",
+    blocks: FALLBACK_COLORS,
+    explosion: "rgba(255,255,255,0.6)",
+    paddle: "#e8e8f0",
+    ball: "#ffffff",
+    glow: 0,
+  },
+  neon: {
+    style: "neon",
+    bg: "#05050d",
+    blocks: {
+      gray: "#9a9ab8",
+      red: "#ff006e",
+      yellow: "#f5ff00",
+      cyan: "#00f5ff",
+      magenta: "#c77dff",
+      hotpink: "#ff6fb0",
+      green: "#00ff88",
+    },
+    explosion: "#ffffff",
+    paddle: "#ffffff",
+    ball: "#ffffff",
+    glow: 14,
+  },
+  retro: {
+    style: "flat",
+    bg: "#0a140a",
+    blocks: {
+      gray: "#7a9a7a",
+      red: "#ff5a1f",
+      yellow: "#ffb000",
+      cyan: "#33ff33",
+      magenta: "#ff5a1f",
+      hotpink: "#ffb000",
+      green: "#33ff33",
+    },
+    explosion: "#e8ffe0",
+    paddle: "#e8ffe0",
+    ball: "#e8ffe0",
+    glow: 0,
+  },
 };

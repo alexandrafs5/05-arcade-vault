@@ -5,6 +5,13 @@ import { useEffect, useState } from "react";
 import { GameCanvas } from "@/components/game-canvas";
 import { fmtNumber } from "@/lib/format";
 import { getGameDefinition } from "@/lib/games/registry";
+import {
+  DEFAULT_SKIN,
+  isSkinId,
+  SKIN_LABELS,
+  skinStorageKey,
+  type SkinId,
+} from "@/lib/games/skins";
 import type {
   EngineSnapshot,
   GameDefinition,
@@ -63,6 +70,29 @@ function Player({
     initialHud(definition),
   );
   const [restartKey, setRestartKey] = useState(0);
+  const [skin, setSkin] = useState<SkinId>(DEFAULT_SKIN);
+  const skins = definition.skins;
+
+  // The saved skin is read after mount so server and client markup match.
+  useEffect(() => {
+    if (!skins) return;
+    try {
+      const saved = localStorage.getItem(skinStorageKey(gameId));
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (isSkinId(saved) && skins.includes(saved)) setSkin(saved);
+    } catch {
+      // storage blocked: keep the default skin
+    }
+  }, [gameId, skins]);
+
+  const pickSkin = (next: SkinId) => {
+    setSkin(next);
+    try {
+      localStorage.setItem(skinStorageKey(gameId), next);
+    } catch {
+      // storage blocked: the choice lasts for this visit only
+    }
+  };
 
   // The session loads after mount, so the name follows it until the player edits it.
   const name = typedName ?? user?.name ?? "INVITADO";
@@ -142,6 +172,36 @@ function Player({
               <div className="v">{formatHud(f, hud[f.key] ?? f.initial)}</div>
             </div>
           ))}
+          {skins && (
+            <div className="hud-stat">
+              <div className="l" id="skin-label">
+                Aspecto
+              </div>
+              <div
+                className="skin-picker"
+                role="radiogroup"
+                aria-labelledby="skin-label"
+              >
+                {skins.map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    role="radio"
+                    aria-checked={skin === id}
+                    className={`skin-opt skin-${id}`}
+                    onClick={(e) => {
+                      pickSkin(id);
+                      // Keep Space/Enter free for the game after a click.
+                      e.currentTarget.blur();
+                    }}
+                  >
+                    <span className="skin-dot" aria-hidden="true" />
+                    {SKIN_LABELS[id]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         <div className="hud-actions">
           <button className="btn yellow" onClick={() => setPaused((p) => !p)}>
@@ -163,6 +223,7 @@ function Player({
         <div className="crt-screen">
           <GameCanvas
             definition={definition}
+            skin={skin}
             paused={paused || over}
             restartKey={restartKey}
             onChange={handleEngineChange}

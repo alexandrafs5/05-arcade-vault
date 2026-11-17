@@ -19,6 +19,7 @@ const GAMES: Record<string, GameDefinition> = {
       { key: "lives", label: "Vidas", format: "hearts", initial: 3 },
       { key: "level", label: "Nivel", format: "pad2", initial: 1 },
     ],
+    skins: ["classic", "neon", "retro"],
   },
   tetris: {
     id: "tetris",
@@ -29,6 +30,7 @@ const GAMES: Record<string, GameDefinition> = {
       { key: "lines", label: "Líneas", format: "number", initial: 0 },
       { key: "level", label: "Nivel", format: "pad2", initial: 1 },
     ],
+    skins: ["classic", "neon", "retro"],
   },
   arkanoid: {
     id: "arkanoid",
@@ -39,6 +41,7 @@ const GAMES: Record<string, GameDefinition> = {
       { key: "lives", label: "Vidas", format: "hearts", initial: 3 },
       { key: "level", label: "Nivel", format: "pad2", initial: 1 },
     ],
+    skins: ["classic", "neon", "retro"],
   },
   snake: {
     id: "snake",
@@ -46,6 +49,7 @@ const GAMES: Record<string, GameDefinition> = {
     width: SNAKE_W,
     height: SNAKE_H,
     hud: [{ key: "length", label: "Longitud", format: "number", initial: 3 }],
+    skins: ["classic", "neon", "retro"],
   },
 };
 

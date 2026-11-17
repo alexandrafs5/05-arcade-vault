@@ -1,11 +1,10 @@
 import type { CreateEngine, EngineSnapshot, EngineState } from "../types";
 import {
   BLOCK,
-  COLORS,
   COLS,
-  GRID_LINE,
   H,
   LINE_SCORES,
+  PALETTES,
   PIECES,
   PIECE_TYPES,
   PLAYFIELD_W,
@@ -16,6 +15,7 @@ import {
   W,
   createBoard,
   rotateCW,
+  type Palette,
   type Shape,
 } from "./constants";
 
@@ -180,21 +180,57 @@ function createGame() {
 
 function drawBlock(
   ctx: CanvasRenderingContext2D,
+  pal: Palette,
   x: number,
   y: number,
   colorIndex: number,
   alpha = 1,
+  ghost = false,
 ) {
   if (!colorIndex) return;
-  ctx.globalAlpha = alpha;
-  ctx.fillStyle = COLORS[colorIndex] ?? "#fff";
-  ctx.fillRect(x * BLOCK + 1, y * BLOCK + 1, BLOCK - 2, BLOCK - 2);
-  ctx.fillStyle = "rgba(255,255,255,0.12)"; // highlight
-  ctx.fillRect(x * BLOCK + 1, y * BLOCK + 1, BLOCK - 2, 4);
+  const color = pal.colors[colorIndex] ?? "#fff";
+  const px = x * BLOCK;
+  const py = y * BLOCK;
+  if (pal.blockStyle === "neon") {
+    // Dark tinted fill + glowing outline.
+    ctx.fillStyle = color;
+    ctx.globalAlpha = alpha * 0.18;
+    ctx.fillRect(px + 2, py + 2, BLOCK - 4, BLOCK - 4);
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = pal.glow;
+    ctx.strokeRect(px + 3, py + 3, BLOCK - 6, BLOCK - 6);
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = "transparent";
+  } else if (pal.blockStyle === "retro") {
+    // Flat and chunky: square with a gap and a hollow core; outline-only ghost.
+    ctx.globalAlpha = 1;
+    if (ghost) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(px + 3, py + 3, BLOCK - 6, BLOCK - 6);
+    } else {
+      ctx.fillStyle = color;
+      ctx.fillRect(px + 2, py + 2, BLOCK - 4, BLOCK - 4);
+      ctx.fillStyle = pal.bg;
+      ctx.fillRect(px + 8, py + 8, BLOCK - 16, BLOCK - 16);
+      ctx.fillStyle = color;
+      ctx.fillRect(px + 11, py + 11, BLOCK - 22, BLOCK - 22);
+    }
+  } else {
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = color;
+    ctx.fillRect(px + 1, py + 1, BLOCK - 2, BLOCK - 2);
+    ctx.fillStyle = "rgba(255,255,255,0.12)"; // highlight
+    ctx.fillRect(px + 1, py + 1, BLOCK - 2, 4);
+  }
   ctx.globalAlpha = 1;
 }
 
-export const createEngine: CreateEngine = (canvas, cb) => {
+export const createEngine: CreateEngine = (canvas, cb, opts) => {
+  let pal = PALETTES[opts?.skin ?? "classic"];
   const ctx = canvas.getContext("2d")!;
   canvas.width = W;
   canvas.height = H;
@@ -230,7 +266,7 @@ export const createEngine: CreateEngine = (canvas, cb) => {
   }
 
   function drawPlayfield() {
-    ctx.strokeStyle = GRID_LINE;
+    ctx.strokeStyle = pal.grid;
     ctx.lineWidth = 0.5;
     for (let c = 1; c < COLS; c++) {
       ctx.beginPath();
@@ -247,30 +283,38 @@ export const createEngine: CreateEngine = (canvas, cb) => {
 
     const { board, current } = game;
     for (let r = 0; r < ROWS; r++)
-      for (let c = 0; c < COLS; c++) drawBlock(ctx, c, r, board[r][c]);
+      for (let c = 0; c < COLS; c++) drawBlock(ctx, pal, c, r, board[r][c]);
 
     const gy = game.ghostY();
     for (let r = 0; r < current.shape.length; r++)
       for (let c = 0; c < current.shape[r].length; c++)
         if (current.shape[r][c])
-          drawBlock(ctx, current.x + c, gy + r, current.shape[r][c], 0.2);
+          drawBlock(
+            ctx,
+            pal,
+            current.x + c,
+            gy + r,
+            current.shape[r][c],
+            pal.ghostAlpha,
+            true,
+          );
 
     for (let r = 0; r < current.shape.length; r++)
       for (let c = 0; c < current.shape[r].length; c++)
-        drawBlock(ctx, current.x + c, current.y + r, current.shape[r][c]);
+        drawBlock(ctx, pal, current.x + c, current.y + r, current.shape[r][c]);
   }
 
   // Next piece in the side strip, centered in a 4x4 cell box.
   function drawPreview() {
-    ctx.strokeStyle = "rgba(255,255,255,0.25)";
+    ctx.strokeStyle = pal.divider;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(PREVIEW_X + 0.5, 0);
     ctx.lineTo(PREVIEW_X + 0.5, H);
     ctx.stroke();
 
-    ctx.fillStyle = "rgba(255,255,255,0.6)";
-    ctx.font = "12px monospace";
+    ctx.fillStyle = pal.label;
+    ctx.font = pal.font;
     ctx.textAlign = "center";
     ctx.fillText("SIGUIENTE", PREVIEW_X + (W - PREVIEW_X) / 2, 28);
 
@@ -281,12 +325,12 @@ export const createEngine: CreateEngine = (canvas, cb) => {
     ctx.translate(PREVIEW_X + (W - PREVIEW_X - 4 * BLOCK) / 2, 44);
     for (let r = 0; r < shape.length; r++)
       for (let c = 0; c < shape[r].length; c++)
-        drawBlock(ctx, offX + c, offY + r, shape[r][c]);
+        drawBlock(ctx, pal, offX + c, offY + r, shape[r][c]);
     ctx.restore();
   }
 
   function draw() {
-    ctx.fillStyle = "#000";
+    ctx.fillStyle = pal.bg;
     ctx.fillRect(0, 0, W, H);
     drawPlayfield();
     drawPreview();
@@ -397,6 +441,10 @@ export const createEngine: CreateEngine = (canvas, cb) => {
       paused = p;
       lastTime = null;
       clearInput();
+    },
+    setSkin(skin) {
+      pal = PALETTES[skin];
+      if (paused) draw();
     },
     restart() {
       game.reset();
