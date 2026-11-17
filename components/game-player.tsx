@@ -74,6 +74,15 @@ function Player({
   const [skin, setSkin] = useState<SkinId>(DEFAULT_SKIN);
   const skins = definition.skins;
 
+  // Flags the page as "playing" so the touch layout can hide nav and footer.
+  // A hidden, cached player page runs no effects, so the flag never outlives
+  // the visible player (unlike a CSS :has(.av-player) check).
+  useEffect(() => {
+    const cls = document.body.classList;
+    cls.add("is-playing");
+    return () => cls.remove("is-playing");
+  }, []);
+
   // The saved skin is read after mount so server and client markup match.
   useEffect(() => {
     if (!skins) return;

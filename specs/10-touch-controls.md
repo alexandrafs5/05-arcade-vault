@@ -1,6 +1,6 @@
 # SPEC 10 — Touch controls for mobile play
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 05, SPEC 07, SPEC 08, SPEC 09
 > **Date:** 2026-11-17
 > **Objective:** Make the four games playable on a touch-only phone with the canvas on top and an on-screen gamepad (d-pad plus two buttons A and B) below it.
@@ -93,24 +93,24 @@ Conventions:
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` and `npm run build` finish with no errors.
-- [ ] With a mouse (`pointer: fine`) the player page of the four games looks and plays exactly as before: no pad, nav, footer and CRT strip visible.
-- [ ] With touch emulation (`pointer: coarse`) at 390×844 the pad shows under the canvas on `/juegos/asteroids/jugar`, `/tetris`, `/arkanoid` and `/snake`, with the same layout in all four.
-- [ ] On touch, nav, footer and the CRT bottom strip are hidden on the player page; `PAUSA`, `FIN` and `SALIR` are visible and work.
-- [ ] On touch, canvas, HUD and pad fit the viewport with no vertical page scroll at 390×844 and at 360×640.
-- [ ] Asteroids: holding left/right rotates the ship, holding up thrusts, A (`Space`) fires.
-- [ ] Tetris: left/right move the piece, holding down soft-drops with auto-repeat, up and B rotate, A hard-drops.
-- [ ] Arkanoid: holding left/right moves the paddle; releasing stops it.
-- [ ] Snake: the four arrows change direction; a 180° reversal is still ignored.
-- [ ] Buttons without an action in a game are dimmed and pressing them does nothing.
-- [ ] Two fingers work at once (a direction and A in Asteroids).
-- [ ] Sliding a finger off a held button and lifting it does not leave the key held.
-- [ ] Opening the pause menu, game over, switching tab or unmounting releases every held key: after resume the ship or paddle does not keep moving.
-- [ ] Long-press on a pad button shows no context menu or text selection; double-tap does not zoom the page.
-- [ ] Dragging on the canvas does not scroll the page.
-- [ ] Keyboard play (arrows, `Space`, `P`, `Esc`) still works on all four games, and typing the name in the game-over `INPUT` is not blocked.
-- [ ] Setting `DEV_ORIGINS` to the phone's IP lets a real phone load the dev server; leaving it unset does not break `npm run dev`.
-- [ ] No console errors on the four player pages during a full touch session.
+- [x] `npm run lint` and `npm run build` finish with no errors.
+- [x] With a mouse (`pointer: fine`) the player page of the four games looks and plays exactly as before: no pad, nav, footer and CRT strip visible.
+- [x] With touch emulation (`pointer: coarse`) at 390×844 the pad shows under the canvas on `/juegos/asteroids/jugar`, `/tetris`, `/arkanoid` and `/snake`, with the same layout in all four.
+- [x] On touch, nav, footer and the CRT bottom strip are hidden on the player page; `PAUSA`, `FIN` and `SALIR` are visible and work.
+- [x] On touch, canvas, HUD and pad fit the viewport with no vertical page scroll at 390×844 and at 360×640.
+- [x] Asteroids: holding left/right rotates the ship, holding up thrusts, A (`Space`) fires.
+- [x] Tetris: left/right move the piece, holding down soft-drops with auto-repeat, up and B rotate, A hard-drops.
+- [x] Arkanoid: holding left/right moves the paddle; releasing stops it.
+- [x] Snake: the four arrows change direction; a 180° reversal is still ignored.
+- [x] Buttons without an action in a game are dimmed and pressing them does nothing.
+- [x] Two fingers work at once (a direction and A in Asteroids).
+- [x] Sliding a finger off a held button and lifting it does not leave the key held.
+- [x] Opening the pause menu, game over, switching tab or unmounting releases every held key: after resume the ship or paddle does not keep moving.
+- [x] Long-press on a pad button shows no context menu or text selection; double-tap does not zoom the page.
+- [x] Dragging on the canvas does not scroll the page.
+- [x] Keyboard play (arrows, `Space`, `P`, `Esc`) still works on all four games, and typing the name in the game-over `INPUT` is not blocked.
+- [x] Setting `DEV_ORIGINS` to the phone's IP lets a real phone load the dev server; leaving it unset does not break `npm run dev`.
+- [x] No console errors on the four player pages during a full touch session.
 
 ## Decisions
 

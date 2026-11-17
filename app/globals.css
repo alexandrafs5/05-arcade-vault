@@ -1387,10 +1387,10 @@ a {
 
 /* Touch layout of the player page: canvas on top, pad below, one screen, no
    page scroll. The player becomes a full-height column; the CRT takes whatever
-   height is left and the canvas letterboxes inside it (SPEC 10, touch). */
+   height is left and the canvas letterboxes inside it (SPEC 10). */
 @media (pointer: coarse) {
-  body:has(.av-player) .av-nav,
-  body:has(.av-player) footer {
+  body.is-playing .av-nav,
+  body.is-playing footer {
     display: none;
   }
   .av-player {
