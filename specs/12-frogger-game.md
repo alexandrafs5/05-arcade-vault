@@ -1,6 +1,6 @@
 # SPEC 12 — Frogger game (FROGGER) playable in the platform
 
-> **Status:** Draft
+> **Status:** Approved
 > **Depends on:** SPEC 05, SPEC 06, SPEC 10
 > **Date:** 2026-11-17
 > **Objective:** Add FROGGER as a real game with its own engine, catalog row and leaderboard, so players can play it and save scores from `/juegos/frogger/jugar`.
