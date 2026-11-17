@@ -1,6 +1,6 @@
 # SPEC 13 — Mobile skin picker in the pause screen
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 10, SPEC 11
 > **Date:** 2026-11-17
 > **Objective:** Let touch players change the game skin (`classic`, `neon`, `retro`) from the pause overlay, since the HUD picker is hidden on phones.
@@ -60,18 +60,18 @@ type SkinPickerProps = {
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` and `npm run build` finish with no errors.
-- [ ] With a mouse (`pointer: fine`) the player page looks and behaves exactly as before: HUD picker visible, no picker in the pause overlay.
-- [ ] With touch emulation the HUD still has no picker, and the pause overlay shows `Aspecto` with CLASSIC, NEON and RETRO for `asteroids`, `tetris`, `arkanoid`, `snake` and `frogger`.
-- [ ] The current skin is the checked option (`aria-checked="true"`) when the overlay opens, including a skin saved earlier on desktop.
-- [ ] Tapping an option while paused changes the canvas skin right away, the game stays paused, and the score and HUD values do not change.
-- [ ] After resuming, the game keeps playing with the chosen skin.
-- [ ] Reloading the page keeps the chosen skin (`localStorage` `av_skin_<id>` holds the id).
-- [ ] Each option's tap target is at least 44px high and the three options fit in one row at 360×640 and 390×844, with no horizontal scroll.
-- [ ] Tapping an option does not resume the game and does not fire a virtual key (the pad is disabled while paused).
-- [ ] The overlay with the picker fits inside the canvas area on Tetris and Frogger at 360×640.
-- [ ] The pad is still hidden on `pointer: fine` and the touch layout (no page scroll at 390×844 and 360×640) is unchanged.
-- [ ] No console errors during a touch session on the five games.
+- [x] `npm run lint` and `npm run build` finish with no errors.
+- [x] With a mouse (`pointer: fine`) the player page looks and behaves exactly as before: HUD picker visible, no picker in the pause overlay.
+- [x] With touch emulation the HUD still has no picker, and the pause overlay shows `Aspecto` with CLASSIC, NEON and RETRO for `asteroids`, `tetris`, `arkanoid`, `snake` and `frogger`.
+- [x] The current skin is the checked option (`aria-checked="true"`) when the overlay opens, including a skin saved earlier on desktop.
+- [x] Tapping an option while paused changes the canvas skin right away, the game stays paused, and the score and HUD values do not change.
+- [x] After resuming, the game keeps playing with the chosen skin.
+- [x] Reloading the page keeps the chosen skin (`localStorage` `av_skin_<id>` holds the id).
+- [x] Each option's tap target is at least 44px high and the three options fit in one row at 360×640 and 390×844, with no horizontal scroll.
+- [x] Tapping an option does not resume the game and does not fire a virtual key (the pad is disabled while paused).
+- [x] The overlay with the picker fits inside the canvas area on Tetris and Frogger at 360×640.
+- [x] The pad is still hidden on `pointer: fine` and the touch layout (no page scroll at 390×844 and 360×640) is unchanged.
+- [x] No console errors during a touch session on the five games.
 
 ## Decisions
 
