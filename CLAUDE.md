@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Arcade Vault: online games platform where players compete for the highest score. The UI copy and the README are in Spanish; code, comments, specs and commits are in English. Five games are playable today (`asteroids`, `tetris`, `arkanoid`, `snake`, `frogger`), each with a real leaderboard in Supabase. Auth is still mock.
 
-The project follows Spec Driven Design: every feature starts as a spec in `specs/NN-<slug>.md` (01–12 so far; 01–11 `Implemented`) and is then implemented step by step.
+The project follows Spec Driven Design: every feature starts as a spec in `specs/NN-<slug>.md` (01–12 so far, all `Implemented`) and is then implemented step by step.
 
 ## Commands
 

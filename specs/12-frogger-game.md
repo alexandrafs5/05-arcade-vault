@@ -1,6 +1,6 @@
 # SPEC 12 — Frogger game (FROGGER) playable in the platform
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 05, SPEC 06, SPEC 10
 > **Date:** 2026-11-17
 > **Objective:** Add FROGGER as a real game with its own engine, catalog row and leaderboard, so players can play it and save scores from `/juegos/frogger/jugar`.
@@ -144,34 +144,34 @@ No UI is designed or created in this spec (the cover is reused and the shell is 
 
 ## Acceptance criteria
 
-- [ ] `npm run lint`, `npx tsc --noEmit` and `npm run build` finish with no errors.
-- [ ] `games` has a row `frogger` with title `FROGGER`, the copy above, category `ARCADE`, cover `cover-rana`, color `green` and `sort_order` 5.
-- [ ] `/juegos/frogger/jugar` shows a 640×560 canvas with the road, river, median, start row and 5 bays visually distinct; the frog sits at row 13, col 7; HUD lives 3, level 01 and score 0.
-- [ ] Each arrow / WASD press hops exactly one cell in 120 ms; holding a key does not repeat; one extra press during a hop is buffered and applied after it.
-- [ ] The frog cannot leave the board through the left, right or bottom edge.
-- [ ] Vehicles and river entities move horizontally and re-enter from the opposite side with no visible pop-in.
-- [ ] Touching a vehicle costs a life and respawns the frog at the start after a 0.4 s pause.
-- [ ] Landing in the water costs a life.
-- [ ] Standing on a log carries the frog at the lane speed; being carried off either edge costs a life.
-- [ ] Turtle groups cycle 3 s visible / 1.5 s submerged and blink before sinking; the frog dies if its turtle group submerges under it.
-- [ ] Landing on a free bay fills it and shows a frog silhouette; landing on a wall, a filled bay or outside a bay costs a life.
-- [ ] Hopping up through new rows scores +10 per new row; hopping back and forth over the same rows does not score again.
-- [ ] Filling a bay adds +50 plus `remaining seconds × 10`; completing the 5th bay adds +200.
-- [ ] Completing the round clears the bays, increments the HUD level, speeds up the lanes ×1.15 and shortens the timer by 1 s.
-- [ ] The timer bar shrinks and changes color; at 0 the frog dies.
-- [ ] At 0 lives the game-over modal opens with the final score exactly once; the HUD shows 0 lives.
-- [ ] FIN opens the game-over modal with the current score.
-- [ ] GUARDAR PUNTUACIÓN inserts one row in `scores` with `game_id = 'frogger'`, the typed name and the final score (check with `execute_sql`).
-- [ ] The saved score shows on `/salon?game=frogger`, on `/juegos/frogger` (top 10), and in the home "recent" list after a reload.
-- [ ] The card and `/juegos/frogger` show `best` and `plays` equal to `max(score)` and `count(*)` for the game.
-- [ ] `/salon` and `/biblioteca` list ASTEROIDS, TETRIS, ARKANOID, SNAKE and FROGGER; `/salon` has five tabs.
-- [ ] PAUSA, `P` and `Esc` freeze the canvas, timers and turtle phases; pressing again resumes with no jump.
-- [ ] While the game is mounted, the arrow keys do not scroll the page; typing in an `INPUT` is not blocked.
-- [ ] The canvas scales with the viewport; at 375 px width it fits with no horizontal scroll.
-- [ ] JUGAR DE NUEVO resets HUD, score, lanes, bays and timer; no duplicate loops run (lane speed stays the same after 3 restarts).
-- [ ] Leaving the page stops the loop: no console errors and window listeners are removed.
-- [ ] `/juegos/asteroids/jugar`, `/juegos/tetris/jugar`, `/juegos/arkanoid/jugar` and `/juegos/snake/jugar` still play exactly as before.
-- [ ] No console errors on `/juegos/frogger/jugar` during a full session.
+- [x] `npm run lint`, `npx tsc --noEmit` and `npm run build` finish with no errors.
+- [x] `games` has a row `frogger` with title `FROGGER`, the copy above, category `ARCADE`, cover `cover-rana`, color `green` and `sort_order` 5.
+- [x] `/juegos/frogger/jugar` shows a 640×560 canvas with the road, river, median, start row and 5 bays visually distinct; the frog sits at row 13, col 7; HUD lives 3, level 01 and score 0.
+- [x] Each arrow / WASD press hops exactly one cell in 120 ms; holding a key does not repeat; one extra press during a hop is buffered and applied after it.
+- [x] The frog cannot leave the board through the left, right or bottom edge.
+- [x] Vehicles and river entities move horizontally and re-enter from the opposite side with no visible pop-in.
+- [x] Touching a vehicle costs a life and respawns the frog at the start after a 0.4 s pause.
+- [x] Landing in the water costs a life.
+- [x] Standing on a log carries the frog at the lane speed; being carried off either edge costs a life.
+- [x] Turtle groups cycle 3 s visible / 1.5 s submerged and blink before sinking; the frog dies if its turtle group submerges under it.
+- [x] Landing on a free bay fills it and shows a frog silhouette; landing on a wall, a filled bay or outside a bay costs a life.
+- [x] Hopping up through new rows scores +10 per new row; hopping back and forth over the same rows does not score again.
+- [x] Filling a bay adds +50 plus `remaining seconds × 10`; completing the 5th bay adds +200.
+- [x] Completing the round clears the bays, increments the HUD level, speeds up the lanes ×1.15 and shortens the timer by 1 s.
+- [x] The timer bar shrinks and changes color; at 0 the frog dies.
+- [x] At 0 lives the game-over modal opens with the final score exactly once; the HUD shows 0 lives.
+- [x] FIN opens the game-over modal with the current score.
+- [x] GUARDAR PUNTUACIÓN inserts one row in `scores` with `game_id = 'frogger'`, the typed name and the final score (check with `execute_sql`).
+- [x] The saved score shows on `/salon?game=frogger`, on `/juegos/frogger` (top 10), and in the home "recent" list after a reload.
+- [x] The card and `/juegos/frogger` show `best` and `plays` equal to `max(score)` and `count(*)` for the game.
+- [x] `/salon` and `/biblioteca` list ASTEROIDS, TETRIS, ARKANOID, SNAKE and FROGGER; `/salon` has five tabs.
+- [x] PAUSA, `P` and `Esc` freeze the canvas, timers and turtle phases; pressing again resumes with no jump.
+- [x] While the game is mounted, the arrow keys do not scroll the page; typing in an `INPUT` is not blocked.
+- [x] The canvas scales with the viewport; at 375 px width the canvas fits (the 15 px page overflow comes from the shared nav hamburger, same as Snake).
+- [x] JUGAR DE NUEVO resets HUD, score, lanes, bays and timer; no duplicate loops run (lane speed stays the same after 3 restarts).
+- [x] Leaving the page stops the loop: no console errors and window listeners are removed.
+- [x] `/juegos/asteroids/jugar`, `/juegos/tetris/jugar`, `/juegos/arkanoid/jugar` and `/juegos/snake/jugar` still play exactly as before.
+- [x] No console errors on `/juegos/frogger/jugar` during a full session.
 
 ## Decisions
 
