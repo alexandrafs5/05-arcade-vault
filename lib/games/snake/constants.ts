@@ -1,3 +1,5 @@
+import type { SkinId } from "../skins";
+
 // Snake constants. Classic Google Snake: 17x15 board, fixed step, no levels.
 
 export const COLS = 17;
@@ -52,9 +54,62 @@ export const KEY_TO_DIR: Record<string, Dir> = {
 export const APPLE_SPRITE = { x: 34, y: 136, w: 110, h: 160 } as const;
 export const SPRITE_URL = "/games/snake/fruits.png";
 
-export const COLOR_BOARD_A = "#aad751";
-export const COLOR_BOARD_B = "#a2d149";
-export const COLOR_SNAKE = "#4a75e8";
-export const COLOR_EYE_WHITE = "#ffffff";
-export const COLOR_EYE_PUPIL = "#0b1a3a";
-export const COLOR_APPLE_FALLBACK = "#e7471d";
+export type Palette = {
+  boardA: string;
+  boardB: string;
+  grid: string | null; // thin cell lines (neon)
+  snake: string;
+  eyeWhite: string;
+  eyePupil: string;
+  apple: string; // fallback / vector apple fill
+  appleHighlight: string; // vector apple stem and shine
+  bodyStyle: "round" | "blocks";
+  appleStyle: "sprite" | "orb" | "pixel";
+  eyeShape: "round" | "square";
+  glow: number; // shadowBlur in px, 0 = off
+};
+
+export const PALETTES: Record<SkinId, Palette> = {
+  classic: {
+    boardA: "#aad751",
+    boardB: "#a2d149",
+    grid: null,
+    snake: "#4a75e8",
+    eyeWhite: "#ffffff",
+    eyePupil: "#0b1a3a",
+    apple: "#e7471d",
+    appleHighlight: "#e7471d",
+    bodyStyle: "round",
+    appleStyle: "sprite",
+    eyeShape: "round",
+    glow: 0,
+  },
+  neon: {
+    boardA: "#05060d",
+    boardB: "#080a14",
+    grid: "rgba(0, 245, 255, 0.10)",
+    snake: "#00ff88",
+    eyeWhite: "#0a0a0f",
+    eyePupil: "#00f5ff",
+    apple: "#ff006e",
+    appleHighlight: "#f5ff00",
+    bodyStyle: "round",
+    appleStyle: "orb",
+    eyeShape: "round",
+    glow: 16,
+  },
+  retro: {
+    boardA: "#0b1f0b",
+    boardB: "#0f290f",
+    grid: null,
+    snake: "#7dff6a",
+    eyeWhite: "#0b1f0b",
+    eyePupil: "#0b1f0b",
+    apple: "#ffb000",
+    appleHighlight: "#ffe08a",
+    bodyStyle: "blocks",
+    appleStyle: "pixel",
+    eyeShape: "square",
+    glow: 0,
+  },
+};
