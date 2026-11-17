@@ -1213,8 +1213,8 @@ a {
    console deck: cross d-pad on the left, staggered B/A on the right (Famicom
    layout). A held button lights up in its own neon; unused buttons stay dim. */
 .av-pad {
-  --pad-cell: clamp(48px, 15vw, 60px);
-  --pad-round: clamp(60px, 19vw, 72px);
+  --pad-cell: clamp(44px, 13vw, 60px);
+  --pad-round: clamp(52px, 16vw, 72px);
   display: none;
   align-items: center;
   justify-content: space-between;
@@ -1387,7 +1387,7 @@ a {
 
 /* Touch layout of the player page: canvas on top, pad below, one screen, no
    page scroll. The player becomes a full-height column; the CRT takes whatever
-   height is left and the canvas letterboxes inside it. */
+   height is left and the canvas letterboxes inside it (SPEC 10, touch). */
 @media (pointer: coarse) {
   body:has(.av-player) .av-nav,
   body:has(.av-player) footer {
@@ -1446,6 +1446,14 @@ a {
   .av-pad {
     flex: none;
     margin-top: 10px;
+  }
+  /* Cap both axes and leave the size auto, so the aspect ratio holds when the
+     screen is taller or narrower than the canvas (height: 100% would stretch). */
+  .av-player .game-canvas {
+    height: auto;
+    width: auto;
+    max-width: 100%;
+    max-height: 100%;
   }
   .game-canvas {
     touch-action: none;
