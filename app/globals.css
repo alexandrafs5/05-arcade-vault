@@ -1379,13 +1379,20 @@ a {
   border-left: 12px solid currentColor;
   border-right-width: 0;
 }
-.pad-dpad .pad-btn:active {
+/* lit: the key is held (finger or physical keyboard). `data-on` is set by
+   touch-controls.tsx, so it survives pointer capture and sliding off. */
+.pad-dpad .pad-btn[data-on] {
+  transform: translateY(3px);
   color: var(--cyan);
-  background: #0b1c20;
+  background: linear-gradient(180deg, #08161e, #030a0e);
   border-color: var(--cyan);
   box-shadow:
-    0 0 14px rgba(0, 245, 255, 0.55),
-    inset 0 0 8px rgba(0, 245, 255, 0.35);
+    0 1px 0 #050507,
+    inset 0 0 16px rgba(0, 245, 255, 0.45),
+    0 0 16px rgba(0, 245, 255, 0.5);
+}
+.pad-dpad .pad-btn[data-on] .pad-arrow {
+  filter: drop-shadow(0 0 6px var(--cyan)) drop-shadow(0 0 12px var(--cyan));
 }
 
 /* A / B: glossy round buttons on one line, B (cyan) then A (magenta). The
@@ -1446,14 +1453,14 @@ a {
   --ab-deep: rgba(110, 0, 40, 0.95);
   --ab-glow: rgba(255, 0, 110, 0.4);
 }
-.pad-ab .pad-btn:active {
+.pad-ab .pad-btn[data-on] {
   transform: translateY(4px) scale(0.97);
   box-shadow:
     0 1px 0 #050507,
     0 0 32px var(--ab-glow),
     inset 0 0 18px rgba(0, 0, 0, 0.5);
 }
-.pad-ab .pad-btn:active::after {
+.pad-ab .pad-btn[data-on]::after {
   opacity: 1;
   transform: scale(1.08);
 }
@@ -1468,20 +1475,6 @@ a {
 .pad-ab .pad-btn[data-idle] {
   color: var(--ink-dim);
   text-shadow: none;
-}
-.pad-btn[data-idle]:active {
-  transform: none;
-}
-.pad-ab .pad-btn[data-idle]:active {
-  box-shadow:
-    0 5px 0 #050507,
-    0 0 20px var(--ab-glow),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    inset 0 -4px 8px rgba(0, 0, 0, 0.4);
-}
-.pad-ab .pad-btn[data-idle]:active::after {
-  opacity: 0;
-  transform: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
