@@ -43,3 +43,6 @@ next-env.d.ts
 
 # Playwright MCP logs
 .playwright-mcp/
+
+# Claude Code agent worktrees
+.claude/worktrees/
