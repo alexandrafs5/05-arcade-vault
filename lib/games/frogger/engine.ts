@@ -358,8 +358,7 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
       ctx.globalAlpha = 0.22;
       ctx.fillStyle = color;
       ctx.fill();
-      ctx.restore();
-      ctx.save();
+      ctx.globalAlpha = 1;
       ctx.strokeStyle = color;
       ctx.lineWidth = 2;
       ctx.shadowColor = color;
@@ -481,9 +480,14 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
       ctx.restore();
       return;
     }
-    // Legs.
+    // Legs: both sides in one path (one glowing stroke in neon).
+    ctx.beginPath();
     for (const sx of [-1, 1]) {
-      ctx.beginPath();
+      // New sub-path, so no line joins the two sides.
+      ctx.moveTo(
+        sx * 13 * s + 4 * s * Math.cos(sx * 0.5),
+        -8 * s + 4 * s * Math.sin(sx * 0.5),
+      );
       ctx.ellipse(sx * 13 * s, -8 * s, 4 * s, 7 * s, sx * 0.5, 0, Math.PI * 2);
       ctx.ellipse(
         sx * 13 * s,
@@ -494,8 +498,8 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
         0,
         Math.PI * 2,
       );
-      paint(pal.frogDark);
     }
+    paint(pal.frogDark);
     // Body.
     ctx.beginPath();
     ctx.ellipse(0, 0, 12 * s, 14 * s, 0, 0, Math.PI * 2);
@@ -515,15 +519,19 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
   }
 
   function drawBays() {
+    const w = px(BAY_WIDTH);
+    ctx.fillStyle = pal.style === "neon" ? pal.wall : pal.bay;
     for (let i = 0; i < BAYS.length; i++) {
-      const x = px(BAYS[i]);
-      const w = px(BAY_WIDTH);
-      ctx.fillStyle = pal.style === "neon" ? pal.wall : pal.bay;
-      ctx.fillRect(x + 2, 2, w - 4, CELL - 4);
-      ctx.beginPath();
-      ctx.rect(x + 2, 2, w - 4, CELL - 4);
-      strokeGlow(pal.bayBorder, pal.style === "retro" ? 4 : 3);
-      if (game.bays[i]) drawFrogShape(x + w / 2, CELL / 2, "down", 1);
+      ctx.fillRect(px(BAYS[i]) + 2, 2, w - 4, CELL - 4);
+    }
+    // All five borders in one path: one glowing stroke.
+    ctx.beginPath();
+    for (let i = 0; i < BAYS.length; i++) {
+      ctx.rect(px(BAYS[i]) + 2, 2, w - 4, CELL - 4);
+    }
+    strokeGlow(pal.bayBorder, pal.style === "retro" ? 4 : 3);
+    for (let i = 0; i < BAYS.length; i++) {
+      if (game.bays[i]) drawFrogShape(px(BAYS[i]) + w / 2, CELL / 2, "down", 1);
     }
   }
 
@@ -710,11 +718,96 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     }
   }
 
+  // Neon river: one path and one glowing stroke for all logs, then one for all
+  // turtle shells (outer ring, inner ring), then the plain-stroke details.
+  function drawRiverNeon() {
+    const lanes = game.lanes;
+    ctx.beginPath();
+    for (const lane of lanes) {
+      if (lane.kind !== "log") continue;
+      const y = px(lane.row);
+      const w = px(lane.width);
+      for (const item of lane.items) {
+        const x = px(item.col);
+        if (x + w < 0 || x > W) continue;
+        ctx.roundRect(x + 2, y + 6, w - 4, CELL - 12, rad(8));
+      }
+    }
+    paint(pal.log);
+    ctx.strokeStyle = pal.logGrain;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (const lane of lanes) {
+      if (lane.kind !== "log") continue;
+      const y = px(lane.row);
+      const w = px(lane.width);
+      for (const item of lane.items) {
+        const x = px(item.col);
+        if (x + w < 0 || x > W) continue;
+        for (let gx = x + 14; gx < x + w - 10; gx += 22) {
+          ctx.moveTo(gx, y + 12);
+          ctx.lineTo(gx + 8, y + CELL - 12);
+        }
+      }
+    }
+    ctx.stroke();
+
+    // Turtle passes: 0 outer ring, 1 inner ring, 2 cross, 3 submerged ghost.
+    for (let pass = 0; pass < 4; pass++) {
+      ctx.beginPath();
+      let any = false;
+      for (const lane of lanes) {
+        if (lane.kind !== "turtle") continue;
+        const y = px(lane.row);
+        const w = px(lane.width);
+        for (const item of lane.items) {
+          const x = px(item.col);
+          if (x + w < 0 || x > W) continue;
+          const phase = game.turtlePhase(item);
+          const submerged = phase === "submerged";
+          if (pass === 3 ? !submerged : submerged) continue;
+          if (phase === "blink" && !blinkOn) continue;
+          for (let i = 0; i < lane.width; i++) {
+            const cx = x + i * CELL + CELL / 2;
+            const cy = y + CELL / 2;
+            if (pass === 0) {
+              ctx.moveTo(cx + 15, cy);
+              ctx.arc(cx, cy, 15, 0, Math.PI * 2);
+            } else if (pass === 1) {
+              ctx.moveTo(cx + 10, cy);
+              ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+            } else if (pass === 2) {
+              ctx.moveTo(cx - 10, cy);
+              ctx.lineTo(cx + 10, cy);
+              ctx.moveTo(cx, cy - 10);
+              ctx.lineTo(cx, cy + 10);
+            } else {
+              ctx.moveTo(cx + 13, cy);
+              ctx.arc(cx, cy, 13, 0, Math.PI * 2);
+            }
+            any = true;
+          }
+        }
+      }
+      if (!any) continue;
+      if (pass === 0) paint(pal.turtle);
+      else if (pass === 1) paint(pal.turtleShell);
+      else {
+        ctx.strokeStyle = pass === 2 ? pal.turtle : pal.turtleGhost;
+        ctx.lineWidth = pass === 2 ? 1.5 : 2;
+        ctx.stroke();
+      }
+    }
+  }
+
   function drawLanes() {
     const neon = pal.style === "neon";
-    if (neon) drawRoadNeon();
+    if (neon) {
+      drawRoadNeon();
+      drawRiverNeon();
+      return;
+    }
     for (const lane of game.lanes) {
-      if (neon && (lane.kind === "car" || lane.kind === "truck")) continue;
       const y = px(lane.row);
       for (const item of lane.items) {
         const x = px(item.col);
