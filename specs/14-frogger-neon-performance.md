@@ -38,6 +38,15 @@ Steps 2–4 of the first plan (offscreen background cache, glow batched per colo
 
 None beat the baseline. Cause: the cost is the `shadowBlur` rasterisation itself (headless software rendering), not the number of strokes or the background. Batching and caching the background are dropped. The only way to take `shadowBlur` out of the frame loop is baked sprites (see Decisions). Run-to-run noise is about ±3 ms; the first run after a page load is slower.
 
+**Harness correction (same day).** The table above is invalid for `drawImage` variants. The script forced `getImageData` each frame on a GPU-accelerated canvas, which is a GPU→CPU readback of about 35 ms that only `drawImage` paths pay. Re-measured in fresh browser contexts, neon at 1×, 2 runs each:
+
+| Code                      | default flush | `willReadFrequently` (software) | no flush (record time) |
+| ------------------------- | ------------- | ------------------------------- | ---------------------- |
+| `main` baseline           | 9.0 / 9.2     | 9.2 / 9.2                       | 0.7 / 0.7              |
+| Road sprites only (Step 3) | 42.4 / 45.8   | 7.2 / 7.5                       | 0.6 / 0.5              |
+
+So the script now creates every 2D context with `willReadFrequently: true` (software canvas, as the spec's convention already assumed) and runs in a fresh browser context. The earlier batching and background-cache variants were measured with the biased flush and must be re-measured before they are ruled out.
+
 ## Scope
 
 **In:**

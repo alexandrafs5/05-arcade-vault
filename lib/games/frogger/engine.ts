@@ -340,7 +340,8 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     }
   }
 
-  const ctx = canvas.getContext("2d")!;
+  // `let`: bakeSprite() points it at an offscreen canvas while it draws a sprite.
+  let ctx = canvas.getContext("2d")!;
   let paused = false;
   let running = false;
   let rafId = 0;
@@ -348,6 +349,61 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
   let blinkOn = true; // turtle blink warning, toggled from the frame clock
 
   const px = (cells: number) => cells * CELL;
+
+  // Neon baked sprites: shadowBlur is the frame cost, so each glowing entity is
+  // drawn once, with its glow, into an ImageBitmap and blitted afterwards.
+  // Key = lane row * 32 + car variant (0 for other kinds). Built lazily and
+  // async (createImageBitmap); until ready the shape is drawn live.
+  const sprites = new Map<number, ImageBitmap>();
+  const pendingSprites = new Set<number>();
+  let spriteGen = 0; // bumped on every reset, so late bitmaps are discarded
+
+  const SPRITE_TURTLE = -1;
+  const SPRITE_BAY = -2;
+  const SPRITE_EDGE = -3;
+
+  const spriteMargin = () => Math.ceil(pal.glow * 1.5) + 2;
+
+  function resetSprites() {
+    spriteGen++;
+    for (const bm of sprites.values()) bm.close();
+    sprites.clear();
+    pendingSprites.clear();
+  }
+
+  // Draws the sprite at the entity origin (x, y). False if not ready yet.
+  function blitSprite(key: number, x: number, y: number): boolean {
+    const bm = sprites.get(key);
+    if (!bm) return false;
+    const m = spriteMargin();
+    ctx.drawImage(bm, x - m, y - m);
+    return true;
+  }
+
+  // `draw` paints the entity with its origin at (m, m), where m = spriteMargin().
+  function bakeSprite(key: number, w: number, h: number, draw: () => void) {
+    pendingSprites.add(key);
+    const gen = spriteGen;
+    const m = spriteMargin();
+    const off = document.createElement("canvas");
+    off.width = w + 2 * m;
+    off.height = h + 2 * m;
+    const real = ctx;
+    ctx = off.getContext("2d")!;
+    try {
+      draw();
+    } finally {
+      ctx = real;
+    }
+    createImageBitmap(off).then((bm) => {
+      if (gen !== spriteGen) {
+        bm.close();
+        return;
+      }
+      pendingSprites.delete(key);
+      sprites.set(key, bm);
+    });
+  }
 
   // Fills the current path. Classic and retro: flat fill. Neon: faint tinted fill
   // plus a glowing outline; the shadow is scoped by save/restore so it never leaks.
@@ -432,10 +488,21 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
       ctx.fillRect(0, px(r), W, CELL);
       if (pal.style === "neon") {
         // Glowing green edge line instead of a flat strip.
-        ctx.beginPath();
-        ctx.moveTo(0, px(r) + 1.5);
-        ctx.lineTo(W, px(r) + 1.5);
-        strokeGlow(pal.safeEdge, 3);
+        if (!blitSprite(SPRITE_EDGE, 0, px(r))) {
+          if (!pendingSprites.has(SPRITE_EDGE)) {
+            const m = spriteMargin();
+            bakeSprite(SPRITE_EDGE, W, 3, () => {
+              ctx.beginPath();
+              ctx.moveTo(m, m + 1.5);
+              ctx.lineTo(m + W, m + 1.5);
+              strokeGlow(pal.safeEdge, 3);
+            });
+          }
+          ctx.beginPath();
+          ctx.moveTo(0, px(r) + 1.5);
+          ctx.lineTo(W, px(r) + 1.5);
+          strokeGlow(pal.safeEdge, 3);
+        }
       } else {
         ctx.fillStyle = pal.safeEdge;
         ctx.fillRect(0, px(r), W, retro ? 4 : 3);
@@ -526,9 +593,21 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
       const w = px(BAY_WIDTH);
       ctx.fillStyle = pal.style === "neon" ? pal.wall : pal.bay;
       ctx.fillRect(x + 2, 2, w - 4, CELL - 4);
-      ctx.beginPath();
-      ctx.rect(x + 2, 2, w - 4, CELL - 4);
-      strokeGlow(pal.bayBorder, pal.style === "retro" ? 4 : 3);
+      if (pal.style === "neon" && blitSprite(SPRITE_BAY, x, 0)) {
+        // Border baked with its glow.
+      } else {
+        if (pal.style === "neon" && !pendingSprites.has(SPRITE_BAY)) {
+          const m = spriteMargin();
+          bakeSprite(SPRITE_BAY, w, CELL, () => {
+            ctx.beginPath();
+            ctx.rect(m + 2, m + 2, w - 4, CELL - 4);
+            strokeGlow(pal.bayBorder, 3);
+          });
+        }
+        ctx.beginPath();
+        ctx.rect(x + 2, 2, w - 4, CELL - 4);
+        strokeGlow(pal.bayBorder, pal.style === "retro" ? 4 : 3);
+      }
       if (game.bays[i]) drawFrogShape(x + w / 2, CELL / 2, "down", 1);
     }
   }
@@ -639,12 +718,51 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
   }
 
   function drawLanes() {
+    const neon = pal.style === "neon";
     for (const lane of game.lanes) {
       const y = px(lane.row);
       for (const item of lane.items) {
         const x = px(item.col);
         const w = px(lane.width);
         if (x + w < 0 || x > W) continue;
+        if (neon && (lane.kind === "car" || lane.kind === "truck")) {
+          const variant =
+            lane.kind === "car" ? item.variant % pal.cars.length : 0;
+          const key = lane.row * 32 + variant;
+          if (blitSprite(key, x, y)) continue;
+          if (!pendingSprites.has(key)) {
+            const m = spriteMargin();
+            if (lane.kind === "car")
+              bakeSprite(key, w, CELL, () =>
+                drawCar(m, m, w, lane.dir, variant),
+              );
+            else bakeSprite(key, w, CELL, () => drawTruck(m, m, w, lane.dir));
+          }
+        }
+        if (neon && lane.kind === "log") {
+          const key = lane.row * 32;
+          if (blitSprite(key, x, y)) continue;
+          if (!pendingSprites.has(key)) {
+            const m = spriteMargin();
+            bakeSprite(key, w, CELL, () => drawLog(m, m, w));
+          }
+        } else if (neon && lane.kind === "turtle") {
+          const phase = game.turtlePhase(item);
+          if (phase !== "submerged") {
+            if (phase === "blink" && !blinkOn) continue;
+            if (sprites.has(SPRITE_TURTLE)) {
+              for (let i = 0; i < lane.width; i++)
+                blitSprite(SPRITE_TURTLE, x + i * CELL, y);
+              continue;
+            }
+            if (!pendingSprites.has(SPRITE_TURTLE)) {
+              const m = spriteMargin();
+              bakeSprite(SPRITE_TURTLE, CELL, CELL, () =>
+                drawTurtles(m, m, 1, "visible"),
+              );
+            }
+          }
+        }
         if (lane.kind === "car") drawCar(x, y, w, lane.dir, item.variant);
         else if (lane.kind === "truck") drawTruck(x, y, w, lane.dir);
         else if (lane.kind === "log") drawLog(x, y, w);
@@ -745,12 +863,14 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     stop() {
       running = false;
       cancelAnimationFrame(rafId);
+      resetSprites();
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("blur", clearInput);
       clearInput();
     },
     setSkin(skin) {
       pal = PALETTES[skin];
+      resetSprites();
       if (paused) draw(); // the loop keeps drawing, this just repaints at once
     },
     setPaused(p) {
@@ -760,6 +880,7 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     },
     restart() {
       game.reset();
+      resetSprites();
       overReported = false;
       lastSnap = null;
       lastTime = null;
