@@ -613,42 +613,49 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     truckDetails(x, y, w, dir);
   }
 
-  // Neon road: one path and one glowing stroke per lane and color instead of
-  // one per vehicle (a shadow over a whole-canvas path costs more than small
-  // ones, so groups stay within one lane); details are drawn afterwards.
+  // Neon road: one path and one glowing stroke per color group instead of one
+  // per vehicle; details are drawn afterwards.
   function drawRoadNeon() {
+    const lanes = game.lanes;
     const nCars = pal.cars.length;
-    for (const lane of game.lanes) {
+    for (let v = 0; v < nCars; v++) {
+      ctx.beginPath();
+      let any = false;
+      for (const lane of lanes) {
+        if (lane.kind !== "car") continue;
+        const y = px(lane.row);
+        const w = px(lane.width);
+        for (const item of lane.items) {
+          if (item.variant % nCars !== v) continue;
+          const x = px(item.col);
+          if (x + w < 0 || x > W) continue;
+          carBody(x, y, w);
+          any = true;
+        }
+      }
+      if (any) paint(pal.cars[v]);
+    }
+    for (let part = 0; part < 2; part++) {
+      ctx.beginPath();
+      let any = false;
+      for (const lane of lanes) {
+        if (lane.kind !== "truck") continue;
+        const y = px(lane.row);
+        const w = px(lane.width);
+        for (const item of lane.items) {
+          const x = px(item.col);
+          if (x + w < 0 || x > W) continue;
+          if (part === 0) truckBox(x, y, w, lane.dir);
+          else truckCabPath(x, y, w, lane.dir);
+          any = true;
+        }
+      }
+      if (any) paint(part === 0 ? pal.truck : pal.truckCab);
+    }
+    for (const lane of lanes) {
       if (lane.kind !== "car" && lane.kind !== "truck") continue;
       const y = px(lane.row);
       const w = px(lane.width);
-      if (lane.kind === "car") {
-        for (let v = 0; v < nCars; v++) {
-          ctx.beginPath();
-          let any = false;
-          for (const item of lane.items) {
-            if (item.variant % nCars !== v) continue;
-            const x = px(item.col);
-            if (x + w < 0 || x > W) continue;
-            carBody(x, y, w);
-            any = true;
-          }
-          if (any) paint(pal.cars[v]);
-        }
-      } else {
-        for (let part = 0; part < 2; part++) {
-          ctx.beginPath();
-          let any = false;
-          for (const item of lane.items) {
-            const x = px(item.col);
-            if (x + w < 0 || x > W) continue;
-            if (part === 0) truckBox(x, y, w, lane.dir);
-            else truckCabPath(x, y, w, lane.dir);
-            any = true;
-          }
-          if (any) paint(part === 0 ? pal.truck : pal.truckCab);
-        }
-      }
       for (const item of lane.items) {
         const x = px(item.col);
         if (x + w < 0 || x > W) continue;
@@ -711,74 +718,84 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     }
   }
 
-  // Neon river: per lane, one path and one glowing stroke for all logs, or
-  // for each turtle pass (outer ring, inner ring), then the plain strokes.
+  // Neon river: one path and one glowing stroke for all logs, then one for all
+  // turtle shells (outer ring, inner ring), then the plain-stroke details.
   function drawRiverNeon() {
-    for (const lane of game.lanes) {
+    const lanes = game.lanes;
+    ctx.beginPath();
+    for (const lane of lanes) {
+      if (lane.kind !== "log") continue;
       const y = px(lane.row);
       const w = px(lane.width);
-      if (lane.kind === "log") {
-        ctx.beginPath();
+      for (const item of lane.items) {
+        const x = px(item.col);
+        if (x + w < 0 || x > W) continue;
+        ctx.roundRect(x + 2, y + 6, w - 4, CELL - 12, rad(8));
+      }
+    }
+    paint(pal.log);
+    ctx.strokeStyle = pal.logGrain;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (const lane of lanes) {
+      if (lane.kind !== "log") continue;
+      const y = px(lane.row);
+      const w = px(lane.width);
+      for (const item of lane.items) {
+        const x = px(item.col);
+        if (x + w < 0 || x > W) continue;
+        for (let gx = x + 14; gx < x + w - 10; gx += 22) {
+          ctx.moveTo(gx, y + 12);
+          ctx.lineTo(gx + 8, y + CELL - 12);
+        }
+      }
+    }
+    ctx.stroke();
+
+    // Turtle passes: 0 outer ring, 1 inner ring, 2 cross, 3 submerged ghost.
+    for (let pass = 0; pass < 4; pass++) {
+      ctx.beginPath();
+      let any = false;
+      for (const lane of lanes) {
+        if (lane.kind !== "turtle") continue;
+        const y = px(lane.row);
+        const w = px(lane.width);
         for (const item of lane.items) {
           const x = px(item.col);
           if (x + w < 0 || x > W) continue;
-          ctx.roundRect(x + 2, y + 6, w - 4, CELL - 12, rad(8));
-        }
-        paint(pal.log);
-        ctx.strokeStyle = pal.logGrain;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        for (const item of lane.items) {
-          const x = px(item.col);
-          if (x + w < 0 || x > W) continue;
-          for (let gx = x + 14; gx < x + w - 10; gx += 22) {
-            ctx.moveTo(gx, y + 12);
-            ctx.lineTo(gx + 8, y + CELL - 12);
-          }
-        }
-        ctx.stroke();
-      } else if (lane.kind === "turtle") {
-        // Passes: 0 outer ring, 1 inner ring, 2 cross, 3 submerged ghost.
-        for (let pass = 0; pass < 4; pass++) {
-          ctx.beginPath();
-          let any = false;
-          for (const item of lane.items) {
-            const x = px(item.col);
-            if (x + w < 0 || x > W) continue;
-            const phase = game.turtlePhase(item);
-            const submerged = phase === "submerged";
-            if (pass === 3 ? !submerged : submerged) continue;
-            if (phase === "blink" && !blinkOn) continue;
-            for (let i = 0; i < lane.width; i++) {
-              const cx = x + i * CELL + CELL / 2;
-              const cy = y + CELL / 2;
-              if (pass === 0) {
-                ctx.moveTo(cx + 15, cy);
-                ctx.arc(cx, cy, 15, 0, Math.PI * 2);
-              } else if (pass === 1) {
-                ctx.moveTo(cx + 10, cy);
-                ctx.arc(cx, cy, 10, 0, Math.PI * 2);
-              } else if (pass === 2) {
-                ctx.moveTo(cx - 10, cy);
-                ctx.lineTo(cx + 10, cy);
-                ctx.moveTo(cx, cy - 10);
-                ctx.lineTo(cx, cy + 10);
-              } else {
-                ctx.moveTo(cx + 13, cy);
-                ctx.arc(cx, cy, 13, 0, Math.PI * 2);
-              }
-              any = true;
+          const phase = game.turtlePhase(item);
+          const submerged = phase === "submerged";
+          if (pass === 3 ? !submerged : submerged) continue;
+          if (phase === "blink" && !blinkOn) continue;
+          for (let i = 0; i < lane.width; i++) {
+            const cx = x + i * CELL + CELL / 2;
+            const cy = y + CELL / 2;
+            if (pass === 0) {
+              ctx.moveTo(cx + 15, cy);
+              ctx.arc(cx, cy, 15, 0, Math.PI * 2);
+            } else if (pass === 1) {
+              ctx.moveTo(cx + 10, cy);
+              ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+            } else if (pass === 2) {
+              ctx.moveTo(cx - 10, cy);
+              ctx.lineTo(cx + 10, cy);
+              ctx.moveTo(cx, cy - 10);
+              ctx.lineTo(cx, cy + 10);
+            } else {
+              ctx.moveTo(cx + 13, cy);
+              ctx.arc(cx, cy, 13, 0, Math.PI * 2);
             }
-          }
-          if (!any) continue;
-          if (pass === 0) paint(pal.turtle);
-          else if (pass === 1) paint(pal.turtleShell);
-          else {
-            ctx.strokeStyle = pass === 2 ? pal.turtle : pal.turtleGhost;
-            ctx.lineWidth = pass === 2 ? 1.5 : 2;
-            ctx.stroke();
+            any = true;
           }
         }
+      }
+      if (!any) continue;
+      if (pass === 0) paint(pal.turtle);
+      else if (pass === 1) paint(pal.turtleShell);
+      else {
+        ctx.strokeStyle = pass === 2 ? pal.turtle : pal.turtleGhost;
+        ctx.lineWidth = pass === 2 ? 1.5 : 2;
+        ctx.stroke();
       }
     }
   }
