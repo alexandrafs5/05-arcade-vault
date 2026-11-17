@@ -10,12 +10,12 @@ Every game must offer three skins. They are applied one game at a time by `@skin
 
 Each skin must look good on the dark site. The player picks the skin in the HUD of `/juegos/<id>/jugar`; the choice is saved per game in `localStorage` (`av_skin_<id>`).
 
-| Game        | classic | neon | retro | Branch | Date |
-| ----------- | ------- | ---- | ----- | ------ | ---- |
+| Game        | classic | neon | retro | Branch            | Date       |
+| ----------- | ------- | ---- | ----- | ----------------- | ---------- |
 | `asteroids` | ✓       | ✓    | ✓     | `skins-asteroids` | 2026-11-16 |
-| `tetris`    | —       | —    | —     | —      | —    |
-| `arkanoid`  | —       | —    | —     | —      | —    |
-| `snake`     | —       | —    | —     | —      | —    |
+| `tetris`    | ✓       | ✓    | ✓     | `skins-tetris`    | 2026-11-16 |
+| `arkanoid`  | —       | —    | —     | —                 | —          |
+| `snake`     | —       | —    | —     | —                 | —          |
 
 ## Notes per game
 
@@ -25,3 +25,10 @@ Each skin must look good on the dark site. The player picks the skin in the HUD 
 - neon: near-black bg, cyan ship, magenta rocks, yellow bullets, green power-up, shadowBlur 14.
 - retro: dark green bg, phosphor-green rocks with flat dark-green fill, amber filled ship, 3px miter lines, square bullets and particles, no glow.
 - Technique: pure vector redraw, each entity draws with the active palette; no sprites.
+
+### tetris
+
+- classic: black bg, pastel filled blocks with top highlight (verbatim).
+- neon: #05050c bg, site-color pieces (cyan, yellow, magenta, green, orange, blue, violet, white) as glowing outlines over a faint tinted fill, shadowBlur 12, cyan divider and label.
+- retro: dark green bg, amber / pale / phosphor / mid green flat blocks with a hollow core, 2px gaps, outline-only ghost, no glow.
+- Technique: pure vector redraw via `drawBlock(ctx, pal, ...)` with `Palette.blockStyle`; no sprites.
