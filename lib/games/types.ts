@@ -44,6 +44,19 @@ export type HudField = {
   initial: number; // value shown before the first snapshot and after restart
 };
 
+// A virtual key fired by an on-screen gamepad button (see components/touch-controls.tsx).
+export type TouchAction = {
+  code: string; // KeyboardEvent.code, e.g. "Space"
+  key: string; // KeyboardEvent.key, e.g. " "
+  label: string; // Spanish aria-label, e.g. "Disparo"
+};
+
+// The d-pad is fixed (arrow keys); only the A and B buttons are per game.
+export type TouchConfig = {
+  a?: TouchAction;
+  b?: TouchAction;
+};
+
 export type GameDefinition = {
   id: string; // matches games.id (URL slug)
   createEngine: CreateEngine;
@@ -51,4 +64,5 @@ export type GameDefinition = {
   height: number;
   hud: HudField[]; // shown after Jugador and Puntuación
   skins?: SkinId[]; // skins the engine implements; the player shows a picker when set
+  touch?: TouchConfig; // A/B gamepad buttons; a missing button is drawn dimmed
 };

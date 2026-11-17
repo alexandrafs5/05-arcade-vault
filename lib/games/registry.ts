@@ -20,6 +20,7 @@ const GAMES: Record<string, GameDefinition> = {
       { key: "level", label: "Nivel", format: "pad2", initial: 1 },
     ],
     skins: ["classic", "neon", "retro"],
+    touch: { a: { code: "Space", key: " ", label: "Disparo" } },
   },
   tetris: {
     id: "tetris",
@@ -31,6 +32,10 @@ const GAMES: Record<string, GameDefinition> = {
       { key: "level", label: "Nivel", format: "pad2", initial: 1 },
     ],
     skins: ["classic", "neon", "retro"],
+    touch: {
+      a: { code: "Space", key: " ", label: "Caída rápida" },
+      b: { code: "KeyX", key: "x", label: "Rotar" },
+    },
   },
   arkanoid: {
     id: "arkanoid",

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { GameCanvas } from "@/components/game-canvas";
+import { TouchControls } from "@/components/touch-controls";
 import { fmtNumber } from "@/lib/format";
 import { getGameDefinition } from "@/lib/games/registry";
 import {
@@ -72,6 +73,15 @@ function Player({
   const [restartKey, setRestartKey] = useState(0);
   const [skin, setSkin] = useState<SkinId>(DEFAULT_SKIN);
   const skins = definition.skins;
+
+  // Flags the page as "playing" so the touch layout can hide nav and footer.
+  // A hidden, cached player page runs no effects, so the flag never outlives
+  // the visible player (unlike a CSS :has(.av-player) check).
+  useEffect(() => {
+    const cls = document.body.classList;
+    cls.add("is-playing");
+    return () => cls.remove("is-playing");
+  }, []);
 
   // The saved skin is read after mount so server and client markup match.
   useEffect(() => {
@@ -259,6 +269,8 @@ function Player({
           <span>CARGA · 1MB</span>
         </div>
       </div>
+
+      <TouchControls touch={definition.touch} disabled={paused || over} />
 
       {over && (
         <div className="modal-bd">
