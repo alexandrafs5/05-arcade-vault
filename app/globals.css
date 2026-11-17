@@ -1385,6 +1385,76 @@ a {
   }
 }
 
+/* Touch layout of the player page: canvas on top, pad below, one screen, no
+   page scroll. The player becomes a full-height column; the CRT takes whatever
+   height is left and the canvas letterboxes inside it. */
+@media (pointer: coarse) {
+  body:has(.av-player) .av-nav,
+  body:has(.av-player) footer {
+    display: none;
+  }
+  .av-player {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    margin: 0 auto;
+    padding: 8px 10px 10px;
+    overflow: hidden;
+  }
+  .player-hud {
+    flex: none;
+    gap: 8px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+  }
+  .player-hud .hud-stat {
+    gap: 2px;
+  }
+  .player-hud .hud-stat .l {
+    font-size: 8px;
+  }
+  .player-hud .hud-stat .v {
+    font-size: 11px;
+  }
+  .player-hud .hud-actions {
+    gap: 6px;
+  }
+  .player-hud .btn {
+    padding: 8px 10px;
+    font-size: 8px;
+  }
+  /* the skin picker stays a desktop control: no room for a third HUD line */
+  .player-hud .hud-stat:has(.skin-picker) {
+    display: none;
+  }
+  .av-player .crt {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    border-radius: 16px;
+  }
+  .av-player .crt-screen {
+    flex: 1 1 0;
+    min-height: 0;
+    aspect-ratio: auto;
+  }
+  .av-player .crt-bottom {
+    display: none;
+  }
+  .av-pad {
+    flex: none;
+    margin-top: 10px;
+  }
+  .game-canvas {
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+}
+
 /* game over modal */
 .modal-bd {
   position: fixed;
