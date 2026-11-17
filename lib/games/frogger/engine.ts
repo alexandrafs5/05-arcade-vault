@@ -610,8 +610,10 @@ export const createEngine: CreateEngine = (canvas, cb) => {
   function frame(ts: number) {
     const dt = lastTime === null ? 0 : Math.min((ts - lastTime) / 1000, 0.05);
     lastTime = paused ? null : ts;
-    blinkOn = Math.floor(ts / 120) % 2 === 0;
-    if (!paused) game.update(dt);
+    if (!paused) {
+      blinkOn = Math.floor(ts / 120) % 2 === 0; // frozen while paused
+      game.update(dt);
+    }
     emitIfChanged();
     draw();
     rafId = requestAnimationFrame(frame);
