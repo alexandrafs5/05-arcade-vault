@@ -168,8 +168,14 @@ function createGame() {
         break;
       }
 
-      for (const e of explosions) e.elapsed += dt * 1000;
-      explosions = explosions.filter((e) => e.elapsed < EXPLOSION_DURATION);
+      // Age and drop finished explosions in place (no new array per frame).
+      let kept = 0;
+      for (let i = 0; i < explosions.length; i++) {
+        const e = explosions[i];
+        e.elapsed += dt * 1000;
+        if (e.elapsed < EXPLOSION_DURATION) explosions[kept++] = e;
+      }
+      explosions.length = kept;
 
       // Ball lost.
       if (!over && ball.y > H) {
