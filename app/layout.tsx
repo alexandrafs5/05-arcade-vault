@@ -7,6 +7,7 @@ import {
 } from "next/font/google";
 import { Footer } from "@/components/footer";
 import { Nav } from "@/components/nav";
+import { UsernameGate } from "@/components/username-gate";
 import { SessionProvider } from "@/lib/session";
 import "./globals.css";
 
@@ -48,6 +49,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             {/* Nav reads usePathname(), which is request-time data on routes with runtime params. */}
             <Suspense fallback={<nav className="av-nav" />}>
               <Nav />
+              <UsernameGate />
             </Suspense>
             <main className="av-main">{children}</main>
             <Footer />
