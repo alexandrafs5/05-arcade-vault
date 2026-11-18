@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { safeNext } from "@/lib/safe-next";
@@ -235,6 +236,20 @@ export function AuthForm() {
                 }
                 required
               />
+              {tab === "in" && (
+                <Link
+                  href="/acceso/recuperar"
+                  className="mono"
+                  style={{
+                    fontSize: 11,
+                    color: "var(--ink-dim)",
+                    letterSpacing: "0.1em",
+                    marginTop: 4,
+                  }}
+                >
+                  ¿OLVIDASTE TU CONTRASEÑA?
+                </Link>
+              )}
             </div>
 
             {error && (
