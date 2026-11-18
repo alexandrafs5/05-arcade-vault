@@ -24,6 +24,9 @@ export function AuthForm() {
   // Already logged in (or just logged in): leave the auth screen.
   useEffect(() => {
     if (status === "user") router.replace(next);
+    // Logged in without a profile: the username step comes first.
+    else if (status === "needs-username")
+      router.replace(`/acceso/usuario?next=${encodeURIComponent(next)}`);
   }, [status, next, router]);
 
   const [tab, setTab] = useState<"in" | "up">("in");
@@ -108,6 +111,25 @@ export function AuthForm() {
       return;
     }
     setSentTo(email);
+  };
+
+  const oauth = async (provider: "google" | "github") => {
+    setError(null);
+    setBusy(true);
+    const supabase = createClient();
+    const { error: err } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      },
+    });
+    // On success the browser navigates to the provider.
+    if (err) {
+      setError(
+        "No se pudo iniciar sesión con el proveedor. Inténtalo de nuevo.",
+      );
+      setBusy(false);
+    }
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -243,10 +265,20 @@ export function AuthForm() {
 
         <div className="auth-divider">O CONTINÚA CON</div>
         <div className="social">
-          <button className="btn ghost" type="button">
+          <button
+            className="btn ghost"
+            type="button"
+            disabled={busy}
+            onClick={() => oauth("google")}
+          >
             ◆ GOOGLE
           </button>
-          <button className="btn ghost" type="button">
+          <button
+            className="btn ghost"
+            type="button"
+            disabled={busy}
+            onClick={() => oauth("github")}
+          >
             ▣ GITHUB
           </button>
         </div>
