@@ -52,7 +52,7 @@ The work is small and mixes code (headers, one migration) with manual dashboard 
 
 This feature introduces no new tables or types. One migration changes function privileges only.
 
-New migration `supabase/migrations/20261117000100_revoke_rls_auto_enable_execute.sql` (re-check the timestamp against the latest applied one before saving; never edit applied migrations):
+New migration `supabase/migrations/20261118050845_revoke_rls_auto_enable_execute.sql` (timestamp re-checked against the latest applied one; never edit applied migrations):
 
 ```sql
 revoke execute on function public.rls_auto_enable() from public, anon, authenticated;
