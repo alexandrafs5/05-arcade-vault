@@ -324,35 +324,135 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
   }
 
   // Vector redraw for neon/retro. Glow is reset after every draw.
-  function drawBlock(x: number, y: number, w: number, h: number, c: string) {
+  // `g` is the live canvas or the offscreen canvas of a baked sprite.
+  function paintBlock(
+    g: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    c: string,
+  ) {
     if (pal.style === "neon") {
-      ctx.shadowColor = c;
-      ctx.shadowBlur = pal.glow;
-      ctx.strokeStyle = c;
-      ctx.lineWidth = 2;
-      ctx.strokeRect(x + 2, y + 2, w - 4, h - 4);
-      ctx.shadowBlur = 0;
-      ctx.shadowColor = "transparent";
-      const prev = ctx.globalAlpha;
-      ctx.globalAlpha = prev * 0.2;
-      ctx.fillStyle = c;
-      ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
-      ctx.globalAlpha = prev;
+      g.shadowColor = c;
+      g.shadowBlur = pal.glow;
+      g.strokeStyle = c;
+      g.lineWidth = 2;
+      g.strokeRect(x + 2, y + 2, w - 4, h - 4);
+      g.shadowBlur = 0;
+      g.shadowColor = "transparent";
+      const prev = g.globalAlpha;
+      g.globalAlpha = prev * 0.2;
+      g.fillStyle = c;
+      g.fillRect(x + 2, y + 2, w - 4, h - 4);
+      g.globalAlpha = prev;
     } else {
-      ctx.fillStyle = c;
-      ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
+      g.fillStyle = c;
+      g.fillRect(x + 2, y + 2, w - 4, h - 4);
     }
   }
 
-  function drawSolid(x: number, y: number, w: number, h: number, c: string) {
-    ctx.fillStyle = c;
+  function paintSolid(
+    g: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    c: string,
+  ) {
+    g.fillStyle = c;
     if (pal.style === "neon") {
-      ctx.shadowColor = c;
-      ctx.shadowBlur = pal.glow;
+      g.shadowColor = c;
+      g.shadowBlur = pal.glow;
     }
-    ctx.fillRect(x, y, w, h);
-    ctx.shadowBlur = 0;
-    ctx.shadowColor = "transparent";
+    g.fillRect(x, y, w, h);
+    g.shadowBlur = 0;
+    g.shadowColor = "transparent";
+  }
+
+  function drawBlock(x: number, y: number, w: number, h: number, c: string) {
+    paintBlock(ctx, x, y, w, h, c);
+  }
+
+  function drawSolid(x: number, y: number, w: number, h: number, c: string) {
+    paintSolid(ctx, x, y, w, h, c);
+  }
+
+  // Neon only: glowing entities baked once (with their glow) into ImageBitmaps,
+  // so the frame loop has no shadowBlur. Built lazily on the first neon frame,
+  // never attached to the DOM. Until a sprite is ready the shape is drawn live.
+  const sprites = new Map<string, ImageBitmap>();
+  let spriteGen = 0; // bumped on skin change / stop: late builds are dropped
+  let spritesBuilding = false;
+  let spriteMargin = 0;
+
+  function closeSprites() {
+    spriteGen++;
+    spritesBuilding = false;
+    for (const b of sprites.values()) b.close();
+    sprites.clear();
+  }
+
+  function bakeSprite(
+    key: string,
+    w: number,
+    h: number,
+    paint: (g: CanvasRenderingContext2D, x: number, y: number) => void,
+    gen: number,
+  ) {
+    const m = spriteMargin;
+    const off = document.createElement("canvas");
+    off.width = w + m * 2;
+    off.height = h + m * 2;
+    const g = off.getContext("2d");
+    if (!g) return Promise.resolve();
+    paint(g, m, m);
+    return createImageBitmap(off).then((bmp) => {
+      if (gen !== spriteGen) {
+        bmp.close();
+        return;
+      }
+      sprites.set(key, bmp);
+    });
+  }
+
+  function buildSprites() {
+    if (spritesBuilding || sprites.size > 0 || pal.style !== "neon") return;
+    spritesBuilding = true;
+    const gen = spriteGen;
+    spriteMargin = Math.ceil(pal.glow * 1.5) + 2;
+    for (const color of Object.keys(pal.blocks) as BlockColor[]) {
+      const c = pal.blocks[color];
+      void bakeSprite(
+        color, // block sprites are keyed by color name
+        BLOCK_W,
+        BLOCK_H,
+        (g, x, y) => paintBlock(g, x, y, BLOCK_W, BLOCK_H, c),
+        gen,
+      );
+    }
+    void bakeSprite(
+      "paddle",
+      PADDLE_W,
+      PADDLE_H,
+      (g, x, y) => paintSolid(g, x, y, PADDLE_W, PADDLE_H, pal.paddle),
+      gen,
+    );
+    void bakeSprite(
+      "ball",
+      BALL_SIZE,
+      BALL_SIZE,
+      (g, x, y) => paintSolid(g, x, y, BALL_SIZE, BALL_SIZE, pal.ball),
+      gen,
+    );
+  }
+
+  // Draws the baked sprite at (x, y) of the shape; false if not ready yet.
+  function drawBaked(key: string, x: number, y: number): boolean {
+    const bmp = sprites.get(key);
+    if (!bmp) return false;
+    ctx.drawImage(bmp, x - spriteMargin, y - spriteMargin);
+    return true;
   }
 
   function draw() {
@@ -360,6 +460,7 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     ctx.fillRect(0, 0, W, H);
     if (sheetStatus !== "ready" && sheetStatus !== "error") return;
     const sprite = pal.style === "sprite";
+    if (pal.style === "neon") buildSprites();
 
     for (const b of game.blocks) {
       if (!b.alive) continue;
@@ -372,7 +473,8 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
           b.h,
           pal.blocks[b.color],
         );
-      else drawBlock(b.x, b.y, b.w, b.h, pal.blocks[b.color]);
+      else if (pal.style !== "neon" || !drawBaked(b.color, b.x, b.y))
+        drawBlock(b.x, b.y, b.w, b.h, pal.blocks[b.color]);
     }
 
     for (const e of game.explosions) {
@@ -412,8 +514,11 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
       );
       drawSprite(SPRITES.ball, ball.x, ball.y, ball.w, ball.h, pal.ball);
     } else {
-      drawSolid(paddle.x, paddle.y, paddle.w, paddle.h, pal.paddle);
-      drawSolid(ball.x, ball.y, ball.w, ball.h, pal.ball);
+      const neon = pal.style === "neon";
+      if (!neon || !drawBaked("paddle", paddle.x, paddle.y))
+        drawSolid(paddle.x, paddle.y, paddle.w, paddle.h, pal.paddle);
+      if (!neon || !drawBaked("ball", ball.x, ball.y))
+        drawSolid(ball.x, ball.y, ball.w, ball.h, pal.ball);
     }
   }
 
@@ -450,6 +555,7 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
       window.removeEventListener("blur", clearInput);
       canvas.removeEventListener("mousemove", onMouseMove);
       clearInput();
+      closeSprites();
       if (sheetStatus === "loading") {
         if (sheet) {
           sheet.onload = null;
@@ -466,6 +572,7 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     },
     setSkin(skin: SkinId) {
       pal = PALETTES[skin];
+      closeSprites(); // rebuilt lazily on the next neon frame
       if (paused) draw(); // repaint one frame; no state change
     },
     restart() {
