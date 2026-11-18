@@ -1,6 +1,6 @@
 # SPEC 15 — Registration, login and authentication
 
-> **Status:** Draft
+> **Status:** Approved
 > **Depends on:** SPEC 01, SPEC 04, SPEC 06
 > **Date:** 2026-11-17
 > **Objective:** Replace the mock login with real Supabase Auth (email + password and Google/GitHub, email confirmation on, password reset, unique usernames in a `profiles` table) on the existing `/acceso` screen, and tie logged-in scores to the account while guests keep playing.
