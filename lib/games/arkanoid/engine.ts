@@ -224,6 +224,7 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
   let lastTime: number | null = null; // null = next frame uses dt = 0
   let overReported = false;
   let lastSnap: EngineSnapshot | null = null;
+  let idleDrawn = false; // the frozen frame is already on the canvas
 
   // Keyboard: both keys held cancel out.
   const keys = { left: false, right: false };
@@ -413,6 +414,7 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
         return;
       }
       sprites.set(key, bmp);
+      idleDrawn = false; // repaint a frozen frame with the new sprite
     });
   }
 
@@ -528,7 +530,12 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     const ready = sheetStatus === "ready" || sheetStatus === "error";
     if (!paused && ready) game.update(dt, inputDir());
     emitIfChanged();
-    draw();
+    // Nothing moves while paused or after game over: paint once, then skip.
+    const idle = paused || game.over;
+    if (!idle || !idleDrawn) {
+      draw();
+      idleDrawn = idle && ready;
+    }
     rafId = requestAnimationFrame(frame);
   }
 
@@ -568,11 +575,13 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     setPaused(p) {
       paused = p;
       lastTime = null;
+      idleDrawn = false; // repaint once on the next frame
       clearInput();
     },
     setSkin(skin: SkinId) {
       pal = PALETTES[skin];
       closeSprites(); // rebuilt lazily on the next neon frame
+      idleDrawn = false;
       if (paused) draw(); // repaint one frame; no state change
     },
     restart() {
@@ -580,6 +589,7 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
       overReported = false;
       lastSnap = null;
       lastTime = null;
+      idleDrawn = false;
       emitIfChanged();
     },
   };
