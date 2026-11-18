@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import type { Database } from "./database.types";
 
 // Server client. Create a new one per request; never share it across requests.
@@ -16,6 +17,10 @@ export async function createClient() {
   }
 
   const cookieStore = await cookies();
+  // With a session cookie, supabase-js checks token expiry with `Date.now()`.
+  // Reads are request-time by design (SPEC 06): mark the scope dynamic first so
+  // Next does not flag that clock read as a blocking prerender (SPEC 15).
+  await connection();
 
   return createServerClient<Database>(url, key, {
     cookies: {

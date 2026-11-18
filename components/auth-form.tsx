@@ -16,10 +16,7 @@ const URL_ERRORS: Record<string, string> = {
 
 export function AuthForm() {
   const router = useRouter();
-  const params = useSearchParams();
-  const next = safeNext(params.get("next"));
-  const urlError = URL_ERRORS[params.get("error") ?? ""] ?? null;
-
+  const next = safeNext(useSearchParams().get("next"));
   const { status } = useSession();
 
   // Already logged in (or just logged in): leave the auth screen.
@@ -29,6 +26,18 @@ export function AuthForm() {
     else if (status === "needs-username")
       router.replace(`/acceso/usuario?next=${encodeURIComponent(next)}`);
   }, [status, next, router]);
+
+  // `cacheComponents` keeps this page mounted (hidden) after leaving it, so the
+  // typed email/password would still be there after signing out. Remounting the
+  // form when the user logs in clears every field.
+  return <AuthFormFields key={status === "user" ? "user" : "other"} />;
+}
+
+function AuthFormFields() {
+  const router = useRouter();
+  const params = useSearchParams();
+  const next = safeNext(params.get("next"));
+  const urlError = URL_ERRORS[params.get("error") ?? ""] ?? null;
 
   const [tab, setTab] = useState<"in" | "up">("in");
   const [username, setUsername] = useState("");

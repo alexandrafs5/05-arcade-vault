@@ -37,12 +37,17 @@ export function NewPasswordForm() {
         setError(
           err.code === "same_password"
             ? "La nueva contraseña debe ser distinta de la anterior."
-            : err.code === "weak_password"
-              ? `La contraseña debe tener al menos ${MIN_PASSWORD} caracteres.`
-              : "No se pudo cambiar la contraseña. Inténtalo de nuevo.",
+            : err.code === "current_password_required"
+              ? "Abre el enlace de recuperación de tu correo para cambiar la contraseña."
+              : err.code === "weak_password"
+                ? `La contraseña debe tener al menos ${MIN_PASSWORD} caracteres.`
+                : "No se pudo cambiar la contraseña. Inténtalo de nuevo.",
         );
         return;
       }
+      // The page stays mounted (hidden) after leaving: do not keep the passwords.
+      setPass("");
+      setAgain("");
       router.push("/");
       router.refresh();
     } finally {
