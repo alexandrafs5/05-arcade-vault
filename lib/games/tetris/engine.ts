@@ -178,6 +178,33 @@ function createGame() {
   };
 }
 
+// Neon block: dark tinted fill + glowing outline, at pixel position (px, py).
+function paintNeonBlock(
+  ctx: CanvasRenderingContext2D,
+  pal: Palette,
+  color: string,
+  px: number,
+  py: number,
+  alpha: number,
+) {
+  ctx.fillStyle = color;
+  ctx.globalAlpha = alpha * 0.18;
+  ctx.fillRect(px + 2, py + 2, BLOCK - 4, BLOCK - 4);
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = pal.glow;
+  ctx.strokeRect(px + 3, py + 3, BLOCK - 6, BLOCK - 6);
+  ctx.shadowBlur = 0;
+  ctx.shadowColor = "transparent";
+}
+
+// Transparent margin around a baked neon block so the glow is not clipped.
+function spriteMargin(pal: Palette): number {
+  return Math.ceil(pal.glow * 1.5) + 2;
+}
+
 function drawBlock(
   ctx: CanvasRenderingContext2D,
   pal: Palette,
@@ -186,24 +213,21 @@ function drawBlock(
   colorIndex: number,
   alpha = 1,
   ghost = false,
+  sprite: ImageBitmap | null = null,
 ) {
   if (!colorIndex) return;
   const color = pal.colors[colorIndex] ?? "#fff";
   const px = x * BLOCK;
   const py = y * BLOCK;
   if (pal.blockStyle === "neon") {
-    // Dark tinted fill + glowing outline.
-    ctx.fillStyle = color;
-    ctx.globalAlpha = alpha * 0.18;
-    ctx.fillRect(px + 2, py + 2, BLOCK - 4, BLOCK - 4);
-    ctx.globalAlpha = alpha;
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
-    ctx.shadowColor = color;
-    ctx.shadowBlur = pal.glow;
-    ctx.strokeRect(px + 3, py + 3, BLOCK - 6, BLOCK - 6);
-    ctx.shadowBlur = 0;
-    ctx.shadowColor = "transparent";
+    if (sprite) {
+      // Baked block (fill + glowing outline); alpha scales both like live.
+      const m = spriteMargin(pal);
+      ctx.globalAlpha = alpha;
+      ctx.drawImage(sprite, px - m, py - m);
+    } else {
+      paintNeonBlock(ctx, pal, color, px, py, alpha);
+    }
   } else if (pal.blockStyle === "retro") {
     // Flat and chunky: square with a gap and a hollow core; outline-only ghost.
     ctx.globalAlpha = 1;
@@ -241,7 +265,43 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
   let rafId = 0;
   let lastTime: number | null = null; // null = next frame uses dt = 0
   let overReported = false;
+  let idleDrawn = false; // the frozen frame (paused / game over) is on screen
   let lastSnap: EngineSnapshot | null = null;
+
+  // Baked neon blocks, one per piece color (index = color index). Built lazily
+  // on the first neon frame; live drawing is used until a sprite is ready.
+  let sprites: (ImageBitmap | null)[] = [];
+  let building = false;
+  let spriteGen = 0;
+
+  function closeSprites() {
+    spriteGen++; // invalidates in-flight createImageBitmap calls
+    building = false;
+    for (const s of sprites) s?.close();
+    sprites = [];
+  }
+
+  function buildSprites() {
+    building = true;
+    const gen = spriteGen;
+    const p = pal;
+    const m = spriteMargin(p);
+    const size = BLOCK + 2 * m;
+    for (let i = 1; i < p.colors.length; i++) {
+      const color = p.colors[i];
+      if (!color) continue;
+      const off = document.createElement("canvas"); // never attached to the DOM
+      off.width = size;
+      off.height = size;
+      paintNeonBlock(off.getContext("2d")!, p, color, m, m, 1);
+      createImageBitmap(off)
+        .then((bm) => {
+          if (gen !== spriteGen) bm.close();
+          else sprites[i] = bm;
+        })
+        .catch(() => {});
+    }
+  }
 
   function emitIfChanged() {
     const state: EngineState = game.over ? "gameover" : "playing";
@@ -283,7 +343,17 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
 
     const { board, current } = game;
     for (let r = 0; r < ROWS; r++)
-      for (let c = 0; c < COLS; c++) drawBlock(ctx, pal, c, r, board[r][c]);
+      for (let c = 0; c < COLS; c++)
+        drawBlock(
+          ctx,
+          pal,
+          c,
+          r,
+          board[r][c],
+          1,
+          false,
+          sprites[board[r][c]] ?? null,
+        );
 
     const gy = game.ghostY();
     for (let r = 0; r < current.shape.length; r++)
@@ -297,11 +367,21 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
             current.shape[r][c],
             pal.ghostAlpha,
             true,
+            sprites[current.shape[r][c]] ?? null,
           );
 
     for (let r = 0; r < current.shape.length; r++)
       for (let c = 0; c < current.shape[r].length; c++)
-        drawBlock(ctx, pal, current.x + c, current.y + r, current.shape[r][c]);
+        drawBlock(
+          ctx,
+          pal,
+          current.x + c,
+          current.y + r,
+          current.shape[r][c],
+          1,
+          false,
+          sprites[current.shape[r][c]] ?? null,
+        );
   }
 
   // Next piece in the side strip, centered in a 4x4 cell box.
@@ -325,11 +405,21 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     ctx.translate(PREVIEW_X + (W - PREVIEW_X - 4 * BLOCK) / 2, 44);
     for (let r = 0; r < shape.length; r++)
       for (let c = 0; c < shape[r].length; c++)
-        drawBlock(ctx, pal, offX + c, offY + r, shape[r][c]);
+        drawBlock(
+          ctx,
+          pal,
+          offX + c,
+          offY + r,
+          shape[r][c],
+          1,
+          false,
+          sprites[shape[r][c]] ?? null,
+        );
     ctx.restore();
   }
 
   function draw() {
+    if (pal.blockStyle === "neon" && !building) buildSprites();
     ctx.fillStyle = pal.bg;
     ctx.fillRect(0, 0, W, H);
     drawPlayfield();
@@ -412,7 +502,14 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
       applyRepeats(dt);
     }
     emitIfChanged();
-    draw();
+    // Nothing moves while paused or after game over: repaint once, then skip.
+    if (!paused && !game.over) {
+      draw();
+      idleDrawn = false;
+    } else if (!idleDrawn) {
+      draw();
+      idleDrawn = true;
+    }
     rafId = requestAnimationFrame(frame);
   }
 
@@ -436,15 +533,22 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("blur", clearInput);
       clearInput();
+      closeSprites();
     },
     setPaused(p) {
       paused = p;
+      idleDrawn = false; // repaint once on the next frame
       lastTime = null;
       clearInput();
     },
     setSkin(skin) {
       pal = PALETTES[skin];
-      if (paused) draw();
+      closeSprites(); // rebuilt lazily on the next neon frame
+      idleDrawn = false;
+      if (paused) {
+        draw();
+        idleDrawn = true;
+      }
     },
     restart() {
       game.reset();

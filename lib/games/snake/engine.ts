@@ -20,6 +20,8 @@ import {
   type Dir,
 } from "./constants";
 
+const EYE_SIDES = [-1, 1];
+
 // Game rules, no canvas and no timers. Everything lives in this closure.
 function createGame() {
   let snake: Cell[] = []; // head first
@@ -176,6 +178,8 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
   let running = false;
   let rafId = 0;
   let lastTime: number | null = null; // null = next frame uses dt = 0
+  // True once the current frozen state (paused or game over) has been painted.
+  let idlePainted = false;
 
   // Apple sprite: loaded inside start(), never at module level.
   let sheet: HTMLImageElement | null = null;
@@ -189,11 +193,13 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     img.onload = () => {
       if (!running || sheet !== img) return; // stopped while loading
       sheetStatus = "ready";
+      idlePainted = false;
     };
     img.onerror = () => {
       if (!running || sheet !== img) return;
       console.error(`Snake: failed to load ${SPRITE_URL}`);
       sheetStatus = "error"; // flat-circle fallback keeps the game playable
+      idlePainted = false;
     };
     img.src = SPRITE_URL;
   }
@@ -272,17 +278,14 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
 
   function drawSnake() {
     const cells = game.snake;
-    const center = (i: number) => ({
-      x: cells[i].col * CELL + CELL / 2,
-      y: cells[i].row * CELL + CELL / 2,
-    });
+    const hx = cells[0].col * CELL + CELL / 2;
+    const hy = cells[0].row * CELL + CELL / 2;
 
     // Body: one rounded line through the cell centers.
     ctx.shadowColor = pal.snake;
     ctx.shadowBlur = pal.glow;
     ctx.fillStyle = pal.snake;
     ctx.strokeStyle = pal.snake;
-    const h = center(0);
     if (pal.bodyStyle === "blocks") {
       // Chunky flat squares, one per cell.
       for (const c of cells) {
@@ -294,14 +297,15 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
       ctx.lineJoin = "round";
       ctx.beginPath();
       for (let i = 0; i < cells.length; i++) {
-        const c = center(i);
-        if (i === 0) ctx.moveTo(c.x, c.y);
-        else ctx.lineTo(c.x, c.y);
+        const x = cells[i].col * CELL + CELL / 2;
+        const y = cells[i].row * CELL + CELL / 2;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
       }
       ctx.stroke();
       // Head: slightly bigger.
       ctx.beginPath();
-      ctx.arc(h.x, h.y, CELL * 0.45, 0, Math.PI * 2);
+      ctx.arc(hx, hy, CELL * 0.45, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.shadowBlur = 0;
@@ -313,9 +317,9 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     const fy = d.row;
     const sx = -d.row; // sideways
     const sy = d.col;
-    for (const side of [-1, 1]) {
-      const ex = h.x + fx * CELL * 0.12 + sx * side * CELL * 0.17;
-      const ey = h.y + fy * CELL * 0.12 + sy * side * CELL * 0.17;
+    for (const side of EYE_SIDES) {
+      const ex = hx + fx * CELL * 0.12 + sx * side * CELL * 0.17;
+      const ey = hy + fy * CELL * 0.12 + sy * side * CELL * 0.17;
       ctx.fillStyle = pal.eyeWhite;
       if (pal.eyeShape === "square") {
         const r = CELL * 0.08;
@@ -350,7 +354,12 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     const ready = sheetStatus === "ready" || sheetStatus === "error";
     if (!paused && ready) game.update(dt);
     emitIfChanged();
-    draw();
+    // Nothing moves while paused or after game over: paint once, then skip.
+    const idle = paused || game.over;
+    if (!idle || !idlePainted) {
+      draw();
+      idlePainted = idle;
+    }
     rafId = requestAnimationFrame(frame);
   }
 
@@ -404,16 +413,19 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     },
     setSkin(skin) {
       pal = PALETTES[skin];
+      idlePainted = false;
       if (paused && (sheetStatus === "ready" || sheetStatus === "error"))
         draw();
     },
     setPaused(p) {
       paused = p;
+      idlePainted = false;
       lastTime = null;
       clearInput();
     },
     restart() {
       game.reset();
+      idlePainted = false;
       overReported = false;
       lastSnap = null;
       lastTime = null;
