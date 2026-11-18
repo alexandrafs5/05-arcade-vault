@@ -77,6 +77,9 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
   let lastTime: number | null = null;
   let paused = false;
   let lastSnap: EngineSnapshot | null = null;
+  // True when the canvas already shows the current frozen scene (paused, or
+  // game over with no particles left), so the loop can skip draw().
+  let frozenDrawn = false;
 
   function emitIfChanged() {
     if (
@@ -118,6 +121,7 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     spawnAsteroids(4);
     clearInput();
     lastTime = null;
+    frozenDrawn = false;
     emitIfChanged();
   }
 
@@ -253,7 +257,10 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
 
     if (paused) {
       lastTime = null; // first frame after resume uses dt = 0
-      draw();
+      if (!frozenDrawn) {
+        draw();
+        frozenDrawn = true;
+      }
       return;
     }
 
@@ -262,7 +269,16 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
 
     const wasOver = state === "gameover";
     update(dt);
-    draw();
+    // Game over with nothing left moving: paint once, then idle.
+    if (state === "gameover" && particles.length === 0) {
+      if (!frozenDrawn) {
+        draw();
+        frozenDrawn = true;
+      }
+    } else {
+      draw();
+      frozenDrawn = false;
+    }
     emitIfChanged();
     if (!wasOver && state === "gameover") cb.onGameOver(score);
   }
@@ -291,13 +307,15 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
       paused = p;
       clearInput();
       lastTime = null;
+      frozenDrawn = false; // repaint once when pausing / resuming
     },
     restart() {
       initGame(); // score 0, lives 3, level 1
     },
     setSkin(skin) {
       pal = PALETTES[skin];
-      draw(); // repaint one frame (the loop also repaints while paused)
+      draw(); // repaint one frame now (the loop skips idle frames)
+      frozenDrawn = true;
     },
   };
 };
