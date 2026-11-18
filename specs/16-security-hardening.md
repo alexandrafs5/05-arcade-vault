@@ -1,6 +1,6 @@
 # SPEC 16 — Basic security hardening
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 04, SPEC 06, SPEC 15
 > **Date:** 2026-11-17
 > **Objective:** Apply the basic security checklist in `references/security/checklist.md`: verify RLS, enforce the password minimum, set signup rate limits, add security headers in Next.js, add route protection in `proxy.ts`, and clear the Supabase security advisor warnings that can be fixed.
@@ -106,21 +106,21 @@ Conventions:
 
 ## Acceptance criteria
 
-- [ ] `curl -I` on `/`, `/juegos/snake/jugar` and `/auth/callback` shows `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Strict-Transport-Security` and `Permissions-Policy`.
-- [ ] Home, `/biblioteca`, `/juegos/snake/jugar`, `/acceso` render with no new console errors; Google/GitHub OAuth redirect and email login still work with the headers on.
-- [ ] `list_tables` shows `rls_enabled: true` for `games`, `scores` and `profiles`.
-- [ ] As `anon`, `update`/`delete` on `scores`, and `insert`/`update`/`delete` on `games`, are rejected; guest score insert still works.
-- [ ] `public.rls_auto_enable()` is no longer executable by `anon` or `authenticated`; `get_advisors` (security) no longer lists `anon_security_definer_function_executable` nor `authenticated_security_definer_function_executable`.
-- [ ] A signup request with a 7-character password sent straight to the Auth REST endpoint is rejected by the server.
-- [ ] The dashboard shows the sign-up and sign-in rate limits set to the values recorded in "Results".
-- [ ] The only security advisor warning left is `auth_leaked_password_protection`, recorded as accepted.
-- [ ] As a guest, `/acceso/usuario` and `/acceso/nueva-clave` redirect to `/acceso`; as a logged-in user, `/acceso` and `/acceso/recuperar` redirect to `/`; no redirect loop in any case.
-- [ ] The password reset email link still ends on `/acceso/nueva-clave` and the new password can be saved; a first OAuth login still ends on `/acceso/usuario`.
-- [ ] `GET /.env`, `/.git/config`, `/wp-admin` and `/phpmyadmin` return `404`.
-- [ ] `/`, `/biblioteca`, `/juegos/snake`, `/juegos/snake/jugar`, `/salon` and `/acerca` stay reachable as a guest; a guest score still saves; the contact form Server Action still works.
-- [ ] The session cookie still refreshes (user stays logged in after reload) and `proxy.ts` is the only proxy file.
-- [ ] No secret appears in the repo or in `NEXT_PUBLIC_*` variables.
-- [ ] `npm run lint`, `npx tsc --noEmit` and `npm run build` finish with no errors.
+- [x] `curl -I` on `/`, `/juegos/snake/jugar` and `/auth/callback` shows `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Strict-Transport-Security` and `Permissions-Policy`.
+- [x] Home, `/biblioteca`, `/juegos/snake/jugar`, `/acceso` render with no new console errors; Google/GitHub OAuth redirect and email login still work with the headers on.
+- [x] `list_tables` shows `rls_enabled: true` for `games`, `scores` and `profiles`.
+- [x] As `anon`, `update`/`delete` on `scores`, and `insert`/`update`/`delete` on `games`, are rejected; guest score insert still works.
+- [x] `public.rls_auto_enable()` is no longer executable by `anon` or `authenticated`; `get_advisors` (security) no longer lists `anon_security_definer_function_executable` nor `authenticated_security_definer_function_executable`.
+- [x] A signup request with a 7-character password sent straight to the Auth REST endpoint is rejected by the server.
+- [x] The dashboard shows the sign-up and sign-in rate limits set to the values recorded in "Results".
+- [x] The only security advisor warning left is `auth_leaked_password_protection`, recorded as accepted.
+- [x] As a guest, `/acceso/usuario` and `/acceso/nueva-clave` redirect to `/acceso`; as a logged-in user, `/acceso` and `/acceso/recuperar` redirect to `/`; no redirect loop in any case.
+- [x] The password reset email link still ends on `/acceso/nueva-clave` and the new password can be saved; a first OAuth login still ends on `/acceso/usuario`.
+- [x] `GET /.env`, `/.git/config`, `/wp-admin` and `/phpmyadmin` return `404`.
+- [x] `/`, `/biblioteca`, `/juegos/snake`, `/juegos/snake/jugar`, `/salon` and `/acerca` stay reachable as a guest; a guest score still saves; the contact form Server Action still works.
+- [x] The session cookie still refreshes (user stays logged in after reload) and `proxy.ts` is the only proxy file.
+- [x] No secret appears in the repo or in `NEXT_PUBLIC_*` variables.
+- [x] `npm run lint`, `npx tsc --noEmit` and `npm run build` finish with no errors.
 
 ## Decisions
 
