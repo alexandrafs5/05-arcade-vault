@@ -1802,6 +1802,24 @@ a {
   border-color: var(--cyan);
   box-shadow: 0 0 12px rgba(0, 245, 255, 0.35);
 }
+.auth-msg {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border: 1px solid;
+}
+.auth-msg.error {
+  color: var(--magenta);
+  border-color: var(--magenta);
+  background: rgba(255, 0, 110, 0.08);
+}
+.auth-msg.ok {
+  color: var(--green);
+  border-color: var(--green);
+  background: rgba(0, 255, 136, 0.08);
+}
 .auth-divider {
   display: flex;
   align-items: center;
