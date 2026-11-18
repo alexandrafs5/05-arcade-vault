@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { safeNext } from "@/lib/safe-next";
+import { useSession } from "@/lib/session";
 import { createClient } from "@/lib/supabase/client";
 
 const USERNAME_RE = /^[A-Za-z0-9_]{3,12}$/;
@@ -17,6 +18,13 @@ export function AuthForm() {
   const params = useSearchParams();
   const next = safeNext(params.get("next"));
   const urlError = URL_ERRORS[params.get("error") ?? ""] ?? null;
+
+  const { status } = useSession();
+
+  // Already logged in (or just logged in): leave the auth screen.
+  useEffect(() => {
+    if (status === "user") router.replace(next);
+  }, [status, next, router]);
 
   const [tab, setTab] = useState<"in" | "up">("in");
   const [username, setUsername] = useState("");

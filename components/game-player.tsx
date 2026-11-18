@@ -104,8 +104,9 @@ function Player({
     }
   };
 
-  // The session loads after mount, so the name follows it until the player edits it.
-  const name = typedName ?? user?.name ?? "INVITADO";
+  // Logged-in users play under their username (fixed). Guests type a name; the
+  // session loads after mount, so a guest default shows until then.
+  const name = user ? user.name : (typedName ?? "INVITADO");
   const cleanName = name.trim();
 
   const handleEngineChange = (s: EngineSnapshot) => {
@@ -269,6 +270,7 @@ function Player({
               <div className="input-row">
                 <input
                   value={name}
+                  readOnly={!!user}
                   onChange={(e) =>
                     setTypedName(e.target.value.toUpperCase().slice(0, 10))
                   }
