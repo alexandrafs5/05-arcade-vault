@@ -265,6 +265,7 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
   let rafId = 0;
   let lastTime: number | null = null; // null = next frame uses dt = 0
   let overReported = false;
+  let idleDrawn = false; // the frozen frame (paused / game over) is on screen
   let lastSnap: EngineSnapshot | null = null;
 
   // Baked neon blocks, one per piece color (index = color index). Built lazily
@@ -501,7 +502,14 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
       applyRepeats(dt);
     }
     emitIfChanged();
-    draw();
+    // Nothing moves while paused or after game over: repaint once, then skip.
+    if (!paused && !game.over) {
+      draw();
+      idleDrawn = false;
+    } else if (!idleDrawn) {
+      draw();
+      idleDrawn = true;
+    }
     rafId = requestAnimationFrame(frame);
   }
 
@@ -529,13 +537,18 @@ export const createEngine: CreateEngine = (canvas, cb, opts) => {
     },
     setPaused(p) {
       paused = p;
+      idleDrawn = false; // repaint once on the next frame
       lastTime = null;
       clearInput();
     },
     setSkin(skin) {
       pal = PALETTES[skin];
       closeSprites(); // rebuilt lazily on the next neon frame
-      if (paused) draw();
+      idleDrawn = false;
+      if (paused) {
+        draw();
+        idleDrawn = true;
+      }
     },
     restart() {
       game.reset();
