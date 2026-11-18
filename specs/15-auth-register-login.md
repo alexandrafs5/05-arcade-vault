@@ -1,6 +1,6 @@
 # SPEC 15 — Registration, login and authentication
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 01, SPEC 04, SPEC 06
 > **Date:** 2026-11-17
 > **Objective:** Replace the mock login with real Supabase Auth (email + password and Google/GitHub, email confirmation on, password reset, unique usernames in a `profiles` table) on the existing `/acceso` screen, and tie logged-in scores to the account while guests keep playing.
@@ -102,25 +102,25 @@ All new UI reuses `.av-auth-wrap`, `.auth-card`, `.field`, `.btn` and `.auth-tab
 
 ## Acceptance criteria
 
-- [ ] Signing up with username, email and password creates an `auth.users` row and a `profiles` row with that username (checked with `execute_sql`).
-- [ ] After signup the login is refused until the email link is opened ("confirmación pendiente" message); after opening it the user is logged in and lands on `/`.
-- [ ] Signing up with a username already taken (any letter case) is rejected before the request, with a Spanish message; usernames outside `^[A-Za-z0-9_]{3,12}$` are rejected.
-- [ ] A weak password (< 8 characters) is rejected with a Spanish message; a wrong password on login shows an error and does not log in.
-- [ ] Reloading the page keeps the user logged in; the nav shows the username on first paint after hydration with no hydration warning.
-- [ ] `CERRAR SESIÓN` (desktop menu and mobile panel) ends the session; the nav goes back to `Iniciar Sesión`.
-- [ ] Visiting `/acceso` while logged in redirects to `/`.
-- [ ] `JUGAR COMO INVITADO` goes to `/` with no session and the player still saves a guest score with `user_id` null.
-- [ ] A logged-in score row has `user_id` = the user id and `name` = the profile username; the name input in the player is read-only.
-- [ ] An insert into `scores` with another user's `user_id`, or with a `name` different from the profile username, is rejected by RLS (checked with `execute_sql` / the REST API).
-- [ ] The Google and GitHub buttons redirect to the provider authorization page; after consent a user without a profile is sent to `/acceso/usuario`, and any other page redirects back there until a username is saved.
-- [ ] Password reset sends a link; opening it shows `/acceso/nueva-clave`; after saving, the new password works for login and the old one does not.
-- [ ] `/acceso/recuperar` shows the same message for a registered and an unregistered email.
-- [ ] `/auth/callback?next=//evil.com` and `?next=https://evil.com` redirect to `/`, never off-site.
-- [ ] `localStorage` has no `av_user` after the first load; no code references `av_user` or `login(`.
-- [ ] No secret (OAuth client secret, service role key) appears in the repo or in `NEXT_PUBLIC_*` variables.
-- [ ] No console errors on `/`, `/acceso`, `/juegos/snake/jugar` and the three new auth routes.
-- [ ] `get_advisors` (security) shows no new warnings for `profiles`, `scores` or the trigger.
-- [ ] `npm run lint`, `npx tsc --noEmit` and `npm run build` finish with no errors.
+- [x] Signing up with username, email and password creates an `auth.users` row and a `profiles` row with that username (checked with `execute_sql`).
+- [x] After signup the login is refused until the email link is opened ("confirmación pendiente" message); after opening it the user is logged in and lands on `/`.
+- [x] Signing up with a username already taken (any letter case) is rejected before the request, with a Spanish message; usernames outside `^[A-Za-z0-9_]{3,12}$` are rejected.
+- [x] A weak password (< 8 characters) is rejected with a Spanish message; a wrong password on login shows an error and does not log in.
+- [x] Reloading the page keeps the user logged in; the nav shows the username on first paint after hydration with no hydration warning.
+- [x] `CERRAR SESIÓN` (desktop menu and mobile panel) ends the session; the nav goes back to `Iniciar Sesión`.
+- [x] Visiting `/acceso` while logged in redirects to `/`.
+- [x] `JUGAR COMO INVITADO` goes to `/` with no session and the player still saves a guest score with `user_id` null.
+- [x] A logged-in score row has `user_id` = the user id and `name` = the profile username; the name input in the player is read-only.
+- [x] An insert into `scores` with another user's `user_id`, or with a `name` different from the profile username, is rejected by RLS (checked with `execute_sql` / the REST API).
+- [x] The Google and GitHub buttons redirect to the provider authorization page; after consent a user without a profile is sent to `/acceso/usuario`, and any other page redirects back there until a username is saved.
+- [x] Password reset sends a link; opening it shows `/acceso/nueva-clave`; after saving, the new password works for login and the old one does not.
+- [x] `/acceso/recuperar` shows the same message for a registered and an unregistered email.
+- [x] `/auth/callback?next=//evil.com` and `?next=https://evil.com` redirect to `/`, never off-site.
+- [x] `localStorage` has no `av_user` after the first load; no code references `av_user` or `login(`.
+- [x] No secret (OAuth client secret, service role key) appears in the repo or in `NEXT_PUBLIC_*` variables.
+- [x] No console errors on `/`, `/acceso`, `/juegos/snake/jugar` and the three new auth routes.
+- [x] `get_advisors` (security) shows no new warnings for `profiles`, `scores` or the trigger.
+- [x] `npm run lint`, `npx tsc --noEmit` and `npm run build` finish with no errors.
 
 ## Decisions
 
