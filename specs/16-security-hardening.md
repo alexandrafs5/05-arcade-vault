@@ -29,7 +29,7 @@ The work is small and mixes code (headers, one migration) with manual dashboard 
 - New migration that revokes `EXECUTE` on `public.rls_auto_enable()` from `public`, `anon` and `authenticated`.
 - RLS verification for `games`, `scores` and `profiles` (`list_tables` shows `rls_enabled`; anon cannot update or delete; anon cannot insert into `games`).
 - Dashboard step (manual): Authentication → Providers → Email → minimum password length 8. Verified with a real signup attempt using a 7-character password.
-- Dashboard step (manual): Authentication → Rate Limits → lower sign-ups and sign-ins per IP per hour to explicit values (proposal: 10 sign-ups / hour / IP; keep the other values at defaults unless the panel shows a weaker one).
+- Dashboard step (manual): Authentication → Rate Limits → lower "Rate limit for sign-ups and sign-ins" (the panel counts sign-ups and sign-ins together, per IP, per 5 minutes) to 10 requests / 5 min (120 / hour); keep the other values at defaults unless the panel shows a weaker one.
 - Re-run `get_advisors` (security) and record what remains.
 - `CLAUDE.md`: add a short "Security" bullet (headers live in `next.config.ts`; dashboard settings; accepted warnings).
 - Route protection in the existing `proxy.ts` (Next.js proxy, https://nextjs.org/docs/app/getting-started/proxy; read the local docs in `node_modules/next/dist/docs/` first). It keeps the cookie refresh from SPEC 15 and adds three rules after `supabase.auth.getClaims()`:
@@ -148,6 +148,20 @@ Conventions:
 | Proxy runs on every request and `getClaims()` adds latency; redirect drops refreshed cookies                                               | Same cost as today (already called); copy cookies onto redirects; matcher unchanged.                                                                |
 | Leaked password protection stays off                                                                                                       | Accepted and recorded; revisit on a plan upgrade.                                                                                                   |
 | Dashboard settings drift (not in the repo)                                                                                                 | Values recorded in "Results" and `CLAUDE.md`.                                                                                                       |
+
+## Results
+
+Dashboard values applied on 2026-11-18 (no secrets):
+
+| Setting                              | Value                                                                                      |
+| ------------------------------------ | ------------------------------------------------------------------------------------------ |
+| Minimum password length              | 8 (server rejects 7 characters: `422 weak_password`, reason `length`)                      |
+| Password requirements                | Lowercase, uppercase, digits and symbols (was set in the dashboard; stricter than SPEC 15) |
+| Rate limit for sign-ups and sign-ins | 10 requests / 5 min / IP (was 30)                                                          |
+| Prevent use of leaked passwords      | Off (Pro plan only), accepted                                                              |
+| Rate limit for sending emails        | 2 emails/h (default built-in SMTP; custom SMTP is a future spec)                           |
+
+Follow-up (out of scope): the signup form should show a clear error for `weak_password` when the password misses a required character class, since the client check only enforces length 8.
 
 ## What is **not** in this spec
 
